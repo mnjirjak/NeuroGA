@@ -188,59 +188,33 @@ class NSGA_II:
         return object_pareto_fronts
 
     def calculate_crowding_distance(self, pareto_front):
-        """Calculate crowding distance for a single pareto front.
-
-        Crowding distance is calculated for each pareto front separately.
-        This function modifies object parameters directly and returns nothing.
-
-        Parameters
-        ----------
-        pareto_front : list
-            List of Route objects.
-        """
-
         # Sort solutions on the pareto front according to ff_path_length in
         # ascending order.
-        sorted_front_ff_path_length = sorted(
-            pareto_front,
-            key=lambda solution: solution.ff_path_length
-        )
 
-        # Sort solutions on the pareto front according to ff_order in
-        # ascending order.
-        sorted_front_ff_order = sorted(
-            pareto_front,
-            key=lambda solution: solution.ff_order
-        )
+        for k, _ in enumerate(self.fitness_functions):
+            sorted_pareto_front = sorted(
+                pareto_front,
+                key=lambda solution: solution.get_fitness_values_train[k]
+            )
 
-        # First and last solution in the sorted arrays have infinite
-        # crowding distance because they only have one neighbour.
-        sorted_front_ff_path_length[0].distance = math.inf
-        sorted_front_ff_path_length[-1].distance = math.inf
+            sorted_pareto_front[0].set_crowding_distance(math.inf)
+            sorted_pareto_front[-1].set_crowding_distance(math.inf)
 
-        sorted_front_ff_order[0].distance = math.inf
-        sorted_front_ff_order[-1].distance = math.inf
+            ff_range = sorted_pareto_front[-1].get_fitness_values_train[k] - sorted_pareto_front[0].get_fitness_values_train[k]
 
-        # Calculate maximum distance for each fitness function separately.
-        max_ff_path_length = sorted_front_ff_path_length[-1].ff_path_length - sorted_front_ff_path_length[0].ff_path_length
-        max_ff_order = sorted_front_ff_order[-1].ff_order - sorted_front_ff_order[0].ff_order
+            # Later, we divide by ff_range, so we want to make sure it's not 0.
+            if ff_range <= 0:
+                ff_range = 1
 
-        # Later, we divide by max_ff values, so we want to make sure they
-        # are not 0.
-        if max_ff_path_length <= 0:
-            max_ff_path_length = 1
+            # Iterate over solutions on the current pareto front and calculate
+            # the contribution of each fitness function to the crowding distance.
+            for i in range(1, len(sorted_pareto_front) - 1):
+                # Contribution of ...
 
-        if max_ff_order <= 0:
-            max_ff_order = 1
-
-        # Iterate over solutions on the current pareto front and calculate
-        # the contribution of each fitness function to the crowding distance.
-        for i in range(1, len(pareto_front) - 1):
-            # Contribution of ff_path_length
-            sorted_front_ff_path_length[i].distance += \
-            (sorted_front_ff_path_length[i+1].ff_path_length - sorted_front_ff_path_length[i-1].ff_path_length) / max_ff_path_length
-            # Contribution of ff_order
-            sorted_front_ff_order[i].distance += (sorted_front_ff_order[i+1].ff_order - sorted_front_ff_order[i-1].ff_order) / max_ff_order
+                # Here we need to add, not set.
+                sorted_pareto_front[i].set_distance += (
+                    (sorted_pareto_front[i + 1].get_fitness_values_train[k] - sorted_pareto_front[i - 1].get_fitness_values_train[k]) / ff_range
+                )
 
     def generate_offspring(self, population):
         """Generate offspring.
