@@ -6,7 +6,8 @@ class Genome:
         :param List[Subgenome] subgenomes: A list of subgenomes that define an individual.
         """
         self.__subgenomes = subgenomes
-        self.__fitness_values = []
+        self.__fitness_values_train = []
+        self.__fitness_values_val = []
         self.__rank = -1
         self.__crowding_distance = 0
 
@@ -61,3 +62,9 @@ class Genome:
         :return: List[Subgenomes]
         """
         return self.__subgenomes
+
+    def get_fitness_values_train(self):
+        return self.__fitness_values_train
+
+    def get_fitness_values_val(self):
+        return self.__fitness_values_val

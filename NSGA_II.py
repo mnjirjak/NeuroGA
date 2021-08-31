@@ -5,6 +5,8 @@ import math
 import random
 import numpy as np
 from Genome import Genome
+import copy
+from Fitness_function import Fitness_function_type
 
 
 class NSGA_II:
@@ -35,7 +37,7 @@ class NSGA_II:
         self.mutation_probability = mutation_probability
         self.on_generation_finish_callback = on_generation_finish_callback
 
-    def calculate(self):
+    def optimize(self):
         generation_number = 1
         population = self.generate_random_population()
 
@@ -60,64 +62,34 @@ class NSGA_II:
                 self.calculate_crowding_distance(non_dominated_sorted_population[i])
 
             population = self.choose_next_generation(non_dominated_sorted_population)
+            self.on_generation_finish_callback(generation_number, non_dominated_sorted_population)
             generation_number += 1
 
         pareto_fronts = self.perform_non_dominated_sort(population)
         return pareto_fronts
 
+    def evaluate_solution(self, solution, data):
+        ff_values = []
+        for fitness_function, _ in self.fitness_functions:
+            ff_values.append(fitness_function.function(solution, data))
+        return ff_values
+
     def generate_random_population(self, cities_to_visit):
-        """Generate N random individuals.
-
-        Use self.population_size.
-
-        Parameters
-        ----------
-        cities_to_visit : list
-            List of strings. Cities that need to be visited.
-
-        Returns
-        -------
-        List of Route objects.
-        """
-
         population = []
         for _ in range(self.population_size):
-            # IMPORTANT! Make a copy of the list. Otherwise, all the
-            # solutions in the population would be the same.
-            random_city_sequence = cities_to_visit[:]
-
-            # This shuffles the list in-place.
-            random.shuffle(random_city_sequence)
-
-            solution = self.Route(random_city_sequence)
-
-            solution.ff_path_length = self.ff_calc_path_length(solution.city_list)
-            solution.ff_order = self.ff_calc_order(solution.city_list)
-
+            solution = copy.deepcopy(self.genome)
+            solution.randomize()
+            solution.get_fitness_values_train.extend(self.evaluate_solution(solution, self.data_train)[:])
+            solution.get_fitness_values_val.extend(self.evaluate_solution(solution, self.data_val)[:])
             population.append(solution)
 
         return population
 
     def perform_non_dominated_sort(self, population):
-        """Divide the population into pareto fronts.
-
-        Parameters
-        ----------
-        population : list
-            List of Route objects.
-
-        Returns
-        -------
-        List of lists of Route objects.
-            E.g., [[Route#1, Route#2, ...], ...]
-        """
-
-        # list_of_dominated_indices[n] will store indices of solutions
-        # population[n] dominates over.
+        # `list_of_dominated_indices[n]` will store indices of solutions `population[n]` dominates over.
         list_of_dominated_indices = [[] for _ in population]
 
-        # domination_count[n] will store how many solutions dominate over
-        # population[n].
+        # `domination_count[n]` will store how many solutions dominate over `population[n]`.
         domination_count = np.zeros(len(population))
 
         pareto_fronts = [[]]
@@ -125,26 +97,34 @@ class NSGA_II:
         for i, _ in enumerate(population):
             for j, _ in enumerate(population):
 
+                # We don't want to compare a solution with itself.
                 if i == j:
                     continue
 
-                # Check if one solutions dominates over the other, or they
-                # are equal.
-                difference = np.sign(
-                                [
-                                    population[j].ff_path_length - population[i].ff_path_length,
-                                    population[j].ff_order - population[i].ff_order
-                                ]
-                            )
+                # A positive number in `fitness_diff` indicates superiority of population[i], while a negative number
+                # indicates superiority of population [j].
+                fitness_diff = []
+
+                for k, _ in enumerate(self.fitness_functions):
+                    if self.fitness_functions[k].type == Fitness_function_type.MIN:
+                        # We want to minimize this FF, therefore the subtraction should return a positive number when
+                        # population[i] has a lower FF value.
+                        fitness_diff.append(population[j].get_fitness_values_train[k] - population[i].get_fitness_values_train[k])
+                    elif self.fitness_functions[k].type == Fitness_function_type.MAX:
+                        # We want to maximize this FF, therefore the subtraction should return a positive number when
+                        # population[i] has a higher FF value.
+                        fitness_diff.append(population[i].get_fitness_values_train[k] - population[j].get_fitness_values_train[k])
+
+                # Check if one solutions dominates over the other, or if they are equal.
+                difference = np.sign(fitness_diff)
 
                 plus_present = False
                 minus_present = False
 
-                for ff_diff in difference:
-                    if ff_diff == 1:
-                        plus_present = True
-                    elif ff_diff == -1:
-                        minus_present = True
+                if 1 in difference:
+                    plus_present = True
+                if -1 in difference:
+                    minus_present = True
 
                 if plus_present and not minus_present:
                     # In this case, population[i] dominates over population[j].
@@ -155,14 +135,12 @@ class NSGA_II:
                 # else:
                 #     # The only remaining case is that population[i] and population[j]
                 #     # are equivalent, so we do nothing.
-                #     pass
 
             if domination_count[i] == 0:
                 # Solution population[i] is not dominated by any other solution,
                 # therefore it belongs to the first (best) pareto front.
-                population[i].rank = 0
+                population[i].set_rank(0)
                 pareto_fronts[0].append(i)
-
 
         i = 0
         # Iterate until each solution is assigned to a pareto front.
@@ -183,7 +161,7 @@ class NSGA_II:
                     # deployed to pareto fronts, add current solution to the
                     # next pareto front.
                     if domination_count[k] == 0:
-                        population[k].rank = i + 1
+                        population[k].set_rank(i + 1)
                         next_pareto_front.append(k)
 
             # Jump to next pareto front.
@@ -197,7 +175,7 @@ class NSGA_II:
         del pareto_fronts[-1]
 
         # Turn pareto front indices into objects; Replace index with the
-        # corresponding object in 'population'.
+        # corresponding object in `population`.
 
         object_pareto_fronts = []
 
