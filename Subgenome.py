@@ -7,7 +7,7 @@ class Subgenome(ABC):
     Each subgenome must implement it.
     """
     @abstractmethod
-    def random(self):
+    def randomize(self):
         """Randomly initialize values in subgenome."""
         pass
 
