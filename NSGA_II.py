@@ -1,6 +1,3 @@
-#!/usr/bin/env python3
-
-
 import math
 import random
 import numpy as np
@@ -47,10 +44,10 @@ class NSGA_II:
             self.calculate_crowding_distance(non_dominated_sorted_population[i])
 
         while True:
-            if generation_number > self.num_generations:
-                break
+            #non_dominated_sorted_population = self.perform_non_dominated_sort(population)
 
-            print('Generation: {}/{}'.format(generation_number, self.num_generations))
+            if generation_number > self.num_generations:
+                return non_dominated_sorted_population
 
             # Generate offspring
             offspring = self.generate_offspring(population)
@@ -62,15 +59,17 @@ class NSGA_II:
                 self.calculate_crowding_distance(non_dominated_sorted_population[i])
 
             population = self.choose_next_generation(non_dominated_sorted_population)
-            self.on_generation_finish_callback(generation_number, non_dominated_sorted_population)
-            generation_number += 1
+            # BACITI OKO JOŠ NA OVO
+            self.calculate_crowding_distance(non_dominated_sorted_population[-1])
 
-        pareto_fronts = self.perform_non_dominated_sort(population)
-        return pareto_fronts
+            # print('Generation: {}/{}'.format(generation_number, self.num_generations))
+            self.on_generation_finish_callback(generation_number, non_dominated_sorted_population)
+
+            generation_number += 1
 
     def evaluate_solution(self, solution, data):
         ff_values = []
-        for fitness_function, _ in self.fitness_functions:
+        for fitness_function in self.fitness_functions:
             ff_values.append(fitness_function.function(solution, data))
         return ff_values
 
@@ -79,8 +78,8 @@ class NSGA_II:
         for _ in range(self.population_size):
             solution = copy.deepcopy(self.genome)
             solution.randomize()
-            solution.get_fitness_values_train.extend(self.evaluate_solution(solution, self.data_train)[:])
-            solution.get_fitness_values_val.extend(self.evaluate_solution(solution, self.data_val)[:])
+            solution.fitness_values_train = self.evaluate_solution(solution, self.data_train)
+            solution.fitness_values_val = self.evaluate_solution(solution, self.data_val)
             population.append(solution)
 
         return population
@@ -109,11 +108,11 @@ class NSGA_II:
                     if self.fitness_functions[k].type == Fitness_function_type.MIN:
                         # We want to minimize this FF, therefore the subtraction should return a positive number when
                         # population[i] has a lower FF value.
-                        fitness_diff.append(population[j].get_fitness_values_train[k] - population[i].get_fitness_values_train[k])
+                        fitness_diff.append(population[j].fitness_values_train[k] - population[i].fitness_values_train[k])
                     elif self.fitness_functions[k].type == Fitness_function_type.MAX:
                         # We want to maximize this FF, therefore the subtraction should return a positive number when
                         # population[i] has a higher FF value.
-                        fitness_diff.append(population[i].get_fitness_values_train[k] - population[j].get_fitness_values_train[k])
+                        fitness_diff.append(population[i].fitness_values_train[k] - population[j].fitness_values_train[k])
 
                 # Check if one solutions dominates over the other, or if they are equal.
                 difference = np.sign(fitness_diff)
@@ -139,7 +138,7 @@ class NSGA_II:
             if domination_count[i] == 0:
                 # Solution population[i] is not dominated by any other solution,
                 # therefore it belongs to the first (best) pareto front.
-                population[i].set_rank(0)
+                population[i].rank = 0
                 pareto_fronts[0].append(i)
 
         i = 0
@@ -161,7 +160,7 @@ class NSGA_II:
                     # deployed to pareto fronts, add current solution to the
                     # next pareto front.
                     if domination_count[k] == 0:
-                        population[k].set_rank(i + 1)
+                        population[k].rank = i + 1
                         next_pareto_front.append(k)
 
             # Jump to next pareto front.
@@ -194,13 +193,13 @@ class NSGA_II:
         for k, _ in enumerate(self.fitness_functions):
             sorted_pareto_front = sorted(
                 pareto_front,
-                key=lambda solution: solution.get_fitness_values_train[k]
+                key=lambda solution: solution.fitness_values_train[k]
             )
 
-            sorted_pareto_front[0].set_crowding_distance(math.inf)
-            sorted_pareto_front[-1].set_crowding_distance(math.inf)
+            sorted_pareto_front[0].crowding_distance = math.inf
+            sorted_pareto_front[-1].crowding_distance = math.inf
 
-            ff_range = sorted_pareto_front[-1].get_fitness_values_train[k] - sorted_pareto_front[0].get_fitness_values_train[k]
+            ff_range = sorted_pareto_front[-1].fitness_values_train[k] - sorted_pareto_front[0].fitness_values_train[k]
 
             # Later, we divide by ff_range, so we want to make sure it's not 0.
             if ff_range <= 0:
@@ -211,27 +210,11 @@ class NSGA_II:
             for i in range(1, len(sorted_pareto_front) - 1):
                 # Contribution of ...
 
-                # Here we need to add, not set.
-                sorted_pareto_front[i].set_distance += (
-                    (sorted_pareto_front[i + 1].get_fitness_values_train[k] - sorted_pareto_front[i - 1].get_fitness_values_train[k]) / ff_range
+                sorted_pareto_front[i].crowding_distance += (
+                    (sorted_pareto_front[i + 1].fitness_values_train[k] - sorted_pareto_front[i - 1].fitness_values_train[k]) / ff_range
                 )
 
     def generate_offspring(self, population):
-        """Generate offspring.
-
-        Use self.offspring_size.
-
-        Parameters
-        ----------
-        population : list
-            List of Route objects.
-
-        Returns
-        -------
-        List of Route objects.
-            E.g., [Route#1, Route#2, ...]
-        """
-
         offspring = []
 
         # Generate a predefined number of individuals.
@@ -241,115 +224,50 @@ class NSGA_II:
         return offspring
 
     def generate_single_solution(self, population):
-        """Generate a single child.
-
-        Parameters
-        ----------
-        population : list
-            List of Route objects.
-
-        Returns
-        -------
-        Route object.
-        """
         # Pick two parents.
-        first_parent = self.tournament_select_parent(population)
-        second_parent = self.tournament_select_parent(population)
+        parent_1 = self.tournament_select_parent(population)
+        parent_2 = self.tournament_select_parent(population)
 
-        # Select where to merge chromosomes.
-        recombination_index = np.random.randint(0, len(first_parent.city_list))
-
-        # Take cities from first_parent up until recombination_index.
-        first_part = first_parent.city_list[:recombination_index]
-
-        # Fill the child with remaining cities from the second_parent.
-        second_part = []
-        for i in range(len(second_parent.city_list)):
-            if second_parent.city_list[i] not in first_part:
-                second_part.append(second_parent.city_list[i])
-
-        child_city_list = first_part + second_part
-        child = self.Route(child_city_list)
+        child = parent_1.recombination(parent_2)
 
         # Mutate a child, introduce slight variation.
-        self.mutate(child)
+        child.mutate()
 
-        child.ff_path_length = self.ff_calc_path_length(child.city_list)
-        child.ff_order = self.ff_calc_order(child.city_list)
+        child.fitness_values_train = self.evaluate_solution(child, self.data_train)
+        child.fitness_values_val = self.evaluate_solution(child, self.data_val)
 
         return child
 
     def tournament_select_parent(self, population):
-        """Select one parent by tournament selection.
+        # Copy tournament size so we can decrement it later.
+        num_battles = self.num_solutions_tournament - 1
 
-        Use self.num_solutions_tournament.
+        random_parent_index = np.random.randint(0, len(population))
 
-        Parameters
-        ----------
-        population : list
-            List of Route objects.
+        while True:
+            random_opponent_index = np.random.randint(0, len(population))
 
-        Returns
-        -------
-        Route object.
-        """
+            # We don't want to compare a parent with itself.
+            if random_parent_index == random_opponent_index:
+                continue
 
-        # Select a random parent.
-        random_parent = population[np.random.randint(0, len(population))]
-
-        for i in range(self.num_solutions_tournament-1):
-            # Select random opponent.
-            random_opponent = population[np.random.randint(0, len(population))]
+            # Create objects from indices.
+            random_parent = population[random_parent_index]
+            random_opponent = population[random_opponent_index]
 
             # Pick a winner.
             if random_opponent.rank < random_parent.rank or \
-                (random_opponent.rank == random_parent.rank and random_opponent.distance > random_parent.distance):
-                random_parent = random_opponent
+                    (random_opponent.rank == random_parent.rank and random_opponent.distance > random_parent.distance):
+                random_parent_index = random_opponent_index
 
-        return random_parent
+            # One less battle remaining.
+            num_battles -= 1
 
-    def mutate(self, child):
-        """Mutate a child.
+            # We have a winner, return the best parent.
+            if num_battles <= 0:
+                return population[random_parent_index]
 
-        This function modifies child object in-place and returns nothing.
-
-        Parameters
-        ----------
-        child : Route object.
-        """
-
-        # Select first city for swap.
-        first_random_city = np.random.randint(0, len(child.city_list))
-
-        while True:
-            # Select second city for swap. The city must be different from
-            # the first one.
-            second_random_city = np.random.randint(0, len(child.city_list))
-
-            if first_random_city != second_random_city:
-                break
-
-        # Swap the cities.
-        temp = child.city_list[first_random_city]
-        child.city_list[first_random_city] = child.city_list[second_random_city]
-        child.city_list[second_random_city] = temp
-
-    def selection(self, non_dominated_sorted_population):
-        """Select individuals for the next generation.
-
-        Use self.population_size.
-
-        Parameters
-        ----------
-        non_dominated_sorted_population : List of lists of Route objects.
-            E.g., [[Route#1, Route#2, ...], ...]
-
-        Returns
-        -------
-        List of Route objects.
-            E.g., [Route#1, Route#2, ...]
-        """
-
+    def choose_next_generation(self, non_dominated_sorted_population):
         next_generation = []
 
         for pareto_front in non_dominated_sorted_population:
@@ -357,12 +275,9 @@ class NSGA_II:
                 # If the whole pareto front fits into next generation, add it.
                 next_generation.extend(pareto_front)
             else:
-                # Otherwise, add the individuals with the highest crowding distance
-                # to preserve genetic diversity.
+                # Otherwise, add the individuals with the highest crowding distance to preserve genetic diversity.
                 pareto_front.sort(key=lambda solution: solution.distance)
-                next_generation.extend(
-                    pareto_front[-(self.population_size-len(next_generation)):]
-                )
+                next_generation.extend(pareto_front[-(self.population_size-len(next_generation)):])
                 break
 
         return next_generation

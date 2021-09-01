@@ -6,10 +6,10 @@ class Genome:
         :param List[Subgenome] subgenomes: A list of subgenomes that define an individual.
         """
         self.__subgenomes = subgenomes
-        self.__fitness_values_train = []
-        self.__fitness_values_val = []
-        self.__rank = -1
-        self.__crowding_distance = 0
+        self.fitness_values_train = []
+        self.fitness_values_val = []
+        self.rank = -1
+        self.crowding_distance = 0
 
     def randomize(self):
         """Randomize subgenomes."""
@@ -33,38 +33,8 @@ class Genome:
         for subgenome in self.__subgenomes:
             subgenome.mutate()
 
-    def set_rank(self, rank):
-        """
-        :param int rank: Individual's NSGA-II rank
-        """
-        self.__rank = rank
-
-    def set_crowding_distance(self, crowding_distance):
-        """
-        :param float crowding_distance: Individual's NSGA-II crowding_distance
-        """
-        self.__crowding_distance = crowding_distance
-
-    def get_rank(self, rank):
-        """
-        :param int rank: Individual's NSGA-II rank
-        """
-        return self.__rank
-
-    def get_crowding_distance(self, crowding_distance):
-        """
-        :param float crowding_distance: Individual's NSGA-II crowding_distance
-        """
-        return self.__crowding_distance
-
     def get_subgenomes(self):
         """
         :return: List[Subgenomes]
         """
         return self.__subgenomes
-
-    def get_fitness_values_train(self):
-        return self.__fitness_values_train
-
-    def get_fitness_values_val(self):
-        return self.__fitness_values_val
