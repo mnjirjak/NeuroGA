@@ -12,79 +12,83 @@ class NSGA_II:
     def __init__(self,
                  genome,
                  fitness_functions,
-                 data_train,
-                 data_val,
                  population_size=80,
                  offspring_size=20,
                  num_generations=10,
                  num_solutions_tournament=3,
                  recombination_probability=0.8,
-                 mutation_probability=0.05,
+                 mutation_probability_global=0.05,
+                 data_train=None,
+                 validate=False,
+                 data_val=None,
                  on_generation_finish_callback=None
                  ):
-        self.genome = genome
-        self.fitness_functions = fitness_functions
-        self.data_train = data_train
-        self.data_val = data_val
-        self.population_size = population_size
-        self.offspring_size = offspring_size
-        self.num_generations = num_generations
-        self.num_solutions_tournament = num_solutions_tournament
-        self.recombination_probability = recombination_probability
-        self.mutation_probability = mutation_probability
-        self.on_generation_finish_callback = on_generation_finish_callback
+        self.__genome = genome
+        self.__fitness_functions = fitness_functions
+        self.__population_size = population_size
+        self.__offspring_size = offspring_size
+        self.__num_generations = num_generations
+        self.__num_solutions_tournament = num_solutions_tournament
+        self.__recombination_probability = recombination_probability
+        self.__mutation_probability_global = mutation_probability_global
+        self.__data_train = data_train
+        self.__validate = validate
+        self.__data_val = data_val
+        self.__on_generation_finish_callback = on_generation_finish_callback
+
+        self.__genome.set_mutation_probabilities(self.__mutation_probability_global)
 
     def optimize(self):
         generation_number = 1
-        population = self.generate_random_population()
+        population = self.__generate_random_population()
 
-        non_dominated_sorted_population = self.perform_non_dominated_sort(population)
+        non_dominated_sorted_population = self.__perform_non_dominated_sort(population)
 
         for i, _ in enumerate(non_dominated_sorted_population):
-            self.calculate_crowding_distance(non_dominated_sorted_population[i])
+            self.__calculate_crowding_distance(non_dominated_sorted_population[i])
 
         while True:
-            #non_dominated_sorted_population = self.perform_non_dominated_sort(population)
-
-            if generation_number > self.num_generations:
+            if generation_number > self.__num_generations:
                 return non_dominated_sorted_population
 
             # Generate offspring
-            offspring = self.generate_offspring(population)
+            offspring = self.__generate_offspring(population)
             population += offspring
 
-            non_dominated_sorted_population = self.perform_non_dominated_sort(population)
+            non_dominated_sorted_population = self.__perform_non_dominated_sort(population)
 
             for i, _ in enumerate(non_dominated_sorted_population):
-                self.calculate_crowding_distance(non_dominated_sorted_population[i])
+                self.__calculate_crowding_distance(non_dominated_sorted_population[i])
 
-            population = self.choose_next_generation(non_dominated_sorted_population)
-            # BACITI OKO JOŠ NA OVO
-            self.calculate_crowding_distance(non_dominated_sorted_population[-1])
+            non_dominated_sorted_population = self.__choose_next_generation(non_dominated_sorted_population)
+            self.__calculate_crowding_distance(non_dominated_sorted_population[-1])
 
-            # print('Generation: {}/{}'.format(generation_number, self.num_generations))
-            self.on_generation_finish_callback(generation_number, non_dominated_sorted_population)
+            population = [solution for pareto_front in non_dominated_sorted_population for solution in pareto_front]
+
+            if self.__on_generation_finish_callback is not None:
+                self.__on_generation_finish_callback(generation_number, self.__num_generations, non_dominated_sorted_population)
 
             generation_number += 1
 
-    def evaluate_solution(self, solution, data):
+    def __evaluate_solution(self, solution, data):
         ff_values = []
-        for fitness_function in self.fitness_functions:
+        for fitness_function in self.__fitness_functions:
             ff_values.append(fitness_function.function(solution, data))
         return ff_values
 
-    def generate_random_population(self, cities_to_visit):
+    def __generate_random_population(self):
         population = []
-        for _ in range(self.population_size):
-            solution = copy.deepcopy(self.genome)
+        for _ in range(self.__population_size):
+            solution = copy.deepcopy(self.__genome)
             solution.randomize()
-            solution.fitness_values_train = self.evaluate_solution(solution, self.data_train)
-            solution.fitness_values_val = self.evaluate_solution(solution, self.data_val)
+            solution.fitness_values_train = self.__evaluate_solution(solution, self.__data_train)
+            if self.__validate:
+                solution.fitness_values_val = self.__evaluate_solution(solution, self.__data_val)
             population.append(solution)
 
         return population
 
-    def perform_non_dominated_sort(self, population):
+    def __perform_non_dominated_sort(self, population):
         # `list_of_dominated_indices[n]` will store indices of solutions `population[n]` dominates over.
         list_of_dominated_indices = [[] for _ in population]
 
@@ -104,12 +108,12 @@ class NSGA_II:
                 # indicates superiority of population [j].
                 fitness_diff = []
 
-                for k, _ in enumerate(self.fitness_functions):
-                    if self.fitness_functions[k].type == Fitness_function_type.MIN:
+                for k, _ in enumerate(self.__fitness_functions):
+                    if self.__fitness_functions[k].type == Fitness_function_type.MIN:
                         # We want to minimize this FF, therefore the subtraction should return a positive number when
                         # population[i] has a lower FF value.
                         fitness_diff.append(population[j].fitness_values_train[k] - population[i].fitness_values_train[k])
-                    elif self.fitness_functions[k].type == Fitness_function_type.MAX:
+                    elif self.__fitness_functions[k].type == Fitness_function_type.MAX:
                         # We want to maximize this FF, therefore the subtraction should return a positive number when
                         # population[i] has a higher FF value.
                         fitness_diff.append(population[i].fitness_values_train[k] - population[j].fitness_values_train[k])
@@ -186,11 +190,11 @@ class NSGA_II:
 
         return object_pareto_fronts
 
-    def calculate_crowding_distance(self, pareto_front):
+    def __calculate_crowding_distance(self, pareto_front):
         # Sort solutions on the pareto front according to ff_path_length in
         # ascending order.
 
-        for k, _ in enumerate(self.fitness_functions):
+        for k, _ in enumerate(self.__fitness_functions):
             sorted_pareto_front = sorted(
                 pareto_front,
                 key=lambda solution: solution.fitness_values_train[k]
@@ -214,33 +218,36 @@ class NSGA_II:
                     (sorted_pareto_front[i + 1].fitness_values_train[k] - sorted_pareto_front[i - 1].fitness_values_train[k]) / ff_range
                 )
 
-    def generate_offspring(self, population):
+    def __generate_offspring(self, population):
         offspring = []
 
         # Generate a predefined number of individuals.
-        for _ in range(self.offspring_size):
-            offspring.append(self.generate_single_solution(population))
+        for _ in range(self.__offspring_size):
+            offspring.append(self.__generate_single_solution(population))
 
         return offspring
 
-    def generate_single_solution(self, population):
+    def __generate_single_solution(self, population):
         # Pick two parents.
-        parent_1 = self.tournament_select_parent(population)
-        parent_2 = self.tournament_select_parent(population)
+        parent_1 = self.__tournament_select_parent(population)
+        child = parent_1
 
-        child = parent_1.recombination(parent_2)
+        if np.random.rand() < self.__recombination_probability:
+            parent_2 = self.__tournament_select_parent(population)
+            child = parent_1.recombination(parent_2)
 
         # Mutate a child, introduce slight variation.
         child.mutate()
 
-        child.fitness_values_train = self.evaluate_solution(child, self.data_train)
-        child.fitness_values_val = self.evaluate_solution(child, self.data_val)
+        child.fitness_values_train = self.__evaluate_solution(child, self.__data_train)
+        if self.__validate:
+            child.fitness_values_val = self.__evaluate_solution(child, self.__data_val)
 
         return child
 
-    def tournament_select_parent(self, population):
+    def __tournament_select_parent(self, population):
         # Copy tournament size so we can decrement it later.
-        num_battles = self.num_solutions_tournament - 1
+        num_battles = self.__num_solutions_tournament - 1
 
         random_parent_index = np.random.randint(0, len(population))
 
@@ -257,7 +264,7 @@ class NSGA_II:
 
             # Pick a winner.
             if random_opponent.rank < random_parent.rank or \
-                    (random_opponent.rank == random_parent.rank and random_opponent.distance > random_parent.distance):
+                    (random_opponent.rank == random_parent.rank and random_opponent.crowding_distance > random_parent.crowding_distance):
                 random_parent_index = random_opponent_index
 
             # One less battle remaining.
@@ -267,17 +274,24 @@ class NSGA_II:
             if num_battles <= 0:
                 return population[random_parent_index]
 
-    def choose_next_generation(self, non_dominated_sorted_population):
+    def __choose_next_generation(self, non_dominated_sorted_population):
         next_generation = []
+        size = 0
 
         for pareto_front in non_dominated_sorted_population:
-            if len(pareto_front) + len(next_generation) <= self.population_size:
+            if len(pareto_front) + size <= self.__population_size:
                 # If the whole pareto front fits into next generation, add it.
-                next_generation.extend(pareto_front)
+                next_generation.append(pareto_front)
+                size += len(pareto_front)
             else:
                 # Otherwise, add the individuals with the highest crowding distance to preserve genetic diversity.
-                pareto_front.sort(key=lambda solution: solution.distance)
-                next_generation.extend(pareto_front[-(self.population_size-len(next_generation)):])
+                if self.__population_size - size <= 0:
+                    break
+
+                pareto_front.sort(key=lambda solution: solution.crowding_distance)
+
+                next_generation.append(pareto_front[-(self.__population_size - size):])
                 break
 
         return next_generation
+

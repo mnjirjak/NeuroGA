@@ -1,6 +1,6 @@
 from enum import Enum
 
-class Fitness_function_type:
+class Fitness_function_type(Enum):
     MIN = 1
     MAX = 2
 

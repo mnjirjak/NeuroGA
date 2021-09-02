@@ -6,6 +6,9 @@ class Subgenome(ABC):
 
     Each subgenome must implement it.
     """
+    def __init__(self, mutation_probability=None):
+        self.mutation_probability = mutation_probability
+
     @abstractmethod
     def randomize(self):
         """Randomly initialize values in subgenome."""
