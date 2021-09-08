@@ -291,9 +291,13 @@ class NSGAII:
         parent_1 = self.__tournament_select_parent(population)
 
         # Decide if we should just clone the first parent or perform recombination.
-        if np.random.rand() < self.__recombination_probability:
+        if np.random.rand() <= self.__recombination_probability:
             # Pick the second parent and create a child.
-            parent_2 = self.__tournament_select_parent(population)
+            while True:
+                parent_2 = self.__tournament_select_parent(population)
+                if parent_1 is not parent_2:
+                    break
+
             child = parent_1.recombination(parent_2)
         else:
             # Create a clone.
