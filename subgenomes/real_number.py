@@ -20,13 +20,14 @@ class RealNumber(Subgenome):
         self.real_number = value
 
     def randomize(self):
-        """Randomly assign value in [self.min_value, self.max_value) range."""
+        """Randomly assign value in [self.__min_value, self.__max_value) range."""
         self.real_number = np.random.rand() * (self.__max_value - self.__min_value) + self.__min_value
 
     def recombination(self, partner):
         """Combine this individual with `partner` using arithmetic mean.
 
-        While combining them, we must respect min and max boundaries.
+        An arithmetic mean of two values which are in [self.__min_value, self.__max_value) range is also in the same
+        range. Therefore, we don't need to check min and max boundaries after recombination.
 
         :param RealNumber partner
         :return: RealNumber
@@ -34,19 +35,20 @@ class RealNumber(Subgenome):
         return RealNumber(
             min_value=self.__min_value,
             max_value=self.__max_value,
-            value=min(max((self.real_number + partner.real_number) / 2, self.__min_value), self.__max_value),
+            value=(self.real_number + partner.real_number) / 2,
             mutation_probability=self.mutation_probability
         )
 
     def mutate(self):
         """Perform mutation, introduce a slight variation.
 
-        Value is mutated by adding or subtracting a small number.
+        Value is mutated by adding or subtracting a small number. After the mutation, we must check min and max
+        boundaries.
 
         Two key steps:
         1. Select sign (+ or -).
         2. Select the degree of change with respect to `self.mutation_probability` and `self.real_number`.
         """
-        self.real_number += \
-            (1.0 if np.random.rand() <= 0.5 else -1.0) * (np.random.rand() * self.mutation_probability) * self.real_number
+        self.real_number += (1.0 if np.random.rand() <= 0.5 else -1.0) * \
+                            (np.random.rand() * self.mutation_probability) * self.real_number
         self.real_number = min(max(self.real_number, self.__min_value), self.__max_value)
