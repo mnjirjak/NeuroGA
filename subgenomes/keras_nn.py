@@ -65,16 +65,3 @@ class KerasNN(Subgenome):
 
             # Alter the weights and check min and max boundaries.
             self.model_weights[i] = np.minimum(np.maximum(self.model_weights[i] + random_matrix, minima), maxima)
-
-    # def __deepcopy__(self, memodict=None):
-    #     model_copy = keras.models.clone_model(self.model)
-    #     model_copy.set_weights(self.model.get_weights())
-    #
-    #     deep_copy = KerasNN(
-    #         model=model_copy,
-    #         min_weight_value=self.__min_weight_value,
-    #         max_weight_value=self.__max_weight_value,
-    #         mutation_probability=self.mutation_probability
-    #     )
-    #
-    #     return deep_copy
