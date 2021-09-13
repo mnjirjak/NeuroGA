@@ -62,18 +62,26 @@ class KerasNN(Subgenome):
         :return: KerasNN
         """
         model_weights_copy = copy.deepcopy(self.model_weights)
+        #
+        # v1 = self.model_weights_as_vector(model_weights_copy)
+        # v2 = self.model_weights_as_vector(partner.model_weights)
+        #
+        # index = np.random.randint(len(v1))
+        #
+        # v3 = []
+        #
+        # v3[:index] = v1[:index]
+        # v3[index:] = v2[index:]
+        #
+        # v3 = np.array(v3)
 
-        v1 = self.model_weights_as_vector(model_weights_copy)
-        v2 = self.model_weights_as_vector(partner.model_weights)
+        for i in range(len(model_weights_copy)):
+            mask = np.random.random(model_weights_copy[i].size)
+            mask[mask>=0.5]=1.0
+            mask[mask!=1.0]=0.0
+            mask_inv = np.abs(mask-1.0)
 
-        index = np.random.randint(len(v1))
-
-        v3 = []
-
-        v3[:index] = v1[:index]
-        v3[index:] = v2[index:]
-
-        v3 = np.array(v3)
+            model_weights_copy[i] = mask*model_weights_copy[i] + mask_inv*partner.model_weights[i]
 
         return KerasNN(
             model_weights=self.model_weights_as_matrix(v3, model_weights_copy),
