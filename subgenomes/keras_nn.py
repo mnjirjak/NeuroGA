@@ -27,6 +27,31 @@ class KerasNN(Subgenome):
             self.model_weights[i] = np.random.random(self.model_weights[i].shape) * \
                                     (self.__max_weight_value - self.__min_weight_value) + self.__min_weight_value
 
+    def model_weights_as_vector(self, layers):
+        weights_vector = []
+
+        for layer in layers:
+            vector = np.reshape(layer, newshape=layer.size)
+            weights_vector.extend(vector)
+
+        return np.array(weights_vector)
+
+    def model_weights_as_matrix(self, weights_vector, original_matrix):
+        weights_matrix = []
+
+        start = 0
+        for _, layer in enumerate(original_matrix):
+            layer_weights_shape = layer.shape
+            layer_weights_size = layer.size
+
+            layer_weights_vector = weights_vector[start:start + layer_weights_size]
+            layer_weights_matrix = np.reshape(layer_weights_vector, newshape=layer_weights_shape)
+            weights_matrix.append(layer_weights_matrix)
+
+            start += layer_weights_size
+
+        return weights_matrix
+
     def recombination(self, partner):
         """Combine this individual with `partner` using arithmetic mean.
 
@@ -38,11 +63,20 @@ class KerasNN(Subgenome):
         """
         model_weights_copy = copy.deepcopy(self.model_weights)
 
-        for i in range(len(model_weights_copy)):
-            model_weights_copy[i] = (model_weights_copy[i] + partner.model_weights[i]) / 2
+        v1 = self.model_weights_as_vector(model_weights_copy)
+        v2 = self.model_weights_as_vector(partner.model_weights)
+
+        index = np.random.randint(len(v1))
+
+        v3 = []
+
+        v3[:index] = v1[:index]
+        v3[index:] = v2[index:]
+
+        v3 = np.array(v3)
 
         return KerasNN(
-            model_weights=model_weights_copy,
+            model_weights=self.model_weights_as_matrix(v3, model_weights_copy),
             min_weight_value=self.__min_weight_value,
             max_weight_value=self.__max_weight_value,
             mutation_probability=self.mutation_probability
@@ -56,18 +90,13 @@ class KerasNN(Subgenome):
         """
         for i in range(len(self.model_weights)):
             # Generate a tensor of random numbers.
-            random_matrix = 0.3*(np.random.random(self.model_weights[i].shape) - 0.5) * \
-                            (self.__max_weight_value - self.__min_weight_value)# * self.mutation_probability
+            random_matrix = np.random.random(self.model_weights[i].shape) * (self.__max_weight_value - self.__min_weight_value) + self.__min_weight_value
 
             random_matrix_marker = np.random.random(self.model_weights[i].shape)
-            random_matrix_marker[random_matrix_marker>self.mutation_probability] = 0.0
+            random_matrix_marker[random_matrix_marker > self.mutation_probability] = 0.0
             random_matrix_marker[random_matrix_marker != 0.0] = 1.0
 
-            random_matrix *= random_matrix_marker
-
-            # Generate tensors containing minimum and maximum values.
-            minima = np.ones(self.model_weights[i].shape) * self.__min_weight_value
-            maxima = np.ones(self.model_weights[i].shape) * self.__max_weight_value
+            marker_inv = np.abs(random_matrix_marker - 1)
 
             # Alter the weights and check min and max boundaries.
-            self.model_weights[i] = np.minimum(np.maximum(self.model_weights[i] + random_matrix, minima), maxima)
+            self.model_weights[i] = self.model_weights[i] * marker_inv + random_matrix * random_matrix_marker
