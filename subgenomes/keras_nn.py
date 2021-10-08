@@ -28,7 +28,7 @@ class KerasNN(Subgenome):
                                     (self.__max_weight_value - self.__min_weight_value) + self.__min_weight_value
 
     def recombination(self, partner):
-        """Combine this individual with `partner`.
+        """Combine this individual with `partner` using multi point crossover.
 
         The weights of two neural network are combined by randomly taking a portion of the weights from the first
         network and then the remaining weights from the second network.
@@ -73,9 +73,9 @@ class KerasNN(Subgenome):
             # Create a mask of the same shape as `model_weights_copy[i]`.
             mask = np.random.random(self.model_weights[i].shape)
 
-            # Make approximately `self.mutation_probability` values in `mask` equal to 1.0, and the rest equal to 0.0.
-            mask[mask > self.mutation_probability] = 0.0
-            mask[mask != 0.0] = 1.0
+            # Make approximately `self.mutation_probability` values in `mask` equal to 0.0, and the rest equal to 1.0.
+            mask[mask > self.mutation_probability] = 1.0
+            mask[mask != 1.0] = 0.0
 
             # Invert the `mask`. `mask_inv` will have 1.0 where `mask` has 0.0 and vice versa.
             mask_inv = np.abs(mask - 1.0)
@@ -83,5 +83,4 @@ class KerasNN(Subgenome):
             # Preserve the weights denoted by 1.0s in `mask_inv`, and replace the rest with values from
             # `random_weights`. This assigns random values to approximately `self.mutation_probability` percent of the
             # values in `self.model_weights[i]`.
-
-            self.model_weights[i] = self.model_weights[i] * mask_inv + random_weights * mask_inv
+            self.model_weights[i] = self.model_weights[i] * mask + random_weights * mask_inv
