@@ -9,7 +9,7 @@ class RealNumberSequence(Subgenome):
         :param int num_of_values: The number of real values in the sequence.
         :param float min_value: Minimum value of the number.
         :param float max_value: Maximum value of the number.
-        :param float values: Current values.
+        :param np.array[float] values: Current values.
         :param float mutation_probability: Local mutation probability. If not specified, global mutation probability
                                            will be used.
         """
