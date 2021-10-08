@@ -45,8 +45,8 @@ class Genome:
         :param float mutation_probability_global: A real number indicating how likely it is a mutation will happen.
         """
         for _, subgenome in self.__subgenomes.items():
-            if subgenome.mutation_probability is None:
-                subgenome.mutation_probability = mutation_probability_global
+            if subgenome.get_mutation_probability() is None:
+                subgenome.set_mutation_probability(mutation_probability_global)
 
     def get_subgenomes(self):
         """

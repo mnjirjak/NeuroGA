@@ -35,7 +35,7 @@ class RealNumber(Subgenome):
         child = RealNumber(
             min_value=self.__min_value,
             max_value=self.__max_value,
-            mutation_probability=self.mutation_probability
+            mutation_probability=self.__mutation_probability
         )
 
         # Set child value.
@@ -51,8 +51,8 @@ class RealNumber(Subgenome):
 
         Two key steps:
         1. Select sign (+ or -).
-        2. Select the degree of change with respect to `self.mutation_probability` and `self.real_number`.
+        2. Select the degree of change with respect to `self.__mutation_probability` and `self.real_number`.
         """
         self.real_number += (1.0 if np.random.rand() <= 0.5 else -1.0) * \
-                            (np.random.rand() * self.mutation_probability) * self.real_number
+                            (np.random.rand() * self.__mutation_probability) * self.real_number
         self.real_number = min(max(self.real_number, self.__min_value), self.__max_value)

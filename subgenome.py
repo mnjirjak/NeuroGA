@@ -2,12 +2,12 @@ from abc import ABC, abstractmethod
 
 
 class Subgenome(ABC):
-    """Abstract class used to define a Subgenome and its methods.
+    """A class used to define a Subgenome and its methods.
 
     Each subgenome must extend it.
     """
     def __init__(self, mutation_probability=None):
-        self.mutation_probability = mutation_probability
+        self.__mutation_probability = mutation_probability
 
     @abstractmethod
     def randomize(self):
@@ -29,3 +29,14 @@ class Subgenome(ABC):
     def mutate(self):
         """Mutate current subgenome."""
         pass
+
+    def get_mutation_probability(self):
+        """Retrieve `self.__mutation_probability`."""
+        return self.__mutation_probability
+
+    def set_mutation_probability(self, mutation_probability):
+        """Set `self.__mutation_probability` to desired value.
+
+        This method should be overridden and adapted in complex subgenomes which are composed of other subgenomes.
+        """
+        self.__mutation_probability = mutation_probability
