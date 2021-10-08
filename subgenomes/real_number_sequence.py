@@ -4,7 +4,7 @@ import numpy as np
 
 class RealNumberSequence(Subgenome):
     """A sequence of real numbers bound by min and max values."""
-    def __init__(self, num_of_values=2, min_value=0.0, max_value=1.0, mutation_probability=None):
+    def __init__(self, num_of_values, min_value=0.0, max_value=1.0, mutation_probability=None):
         """
         :param int num_of_values: The number of real values in the sequence.
         :param float min_value: Minimum value of the number.
@@ -47,7 +47,7 @@ class RealNumberSequence(Subgenome):
             num_of_values=self.num_of_values,
             min_value=self.__min_value,
             max_value=self.__max_value,
-            mutation_probability=self.__mutation_probability
+            mutation_probability=self._mutation_probability
         )
 
         # Take a portion of the values from `self.values` and the rest from `partner.values`.
@@ -58,7 +58,7 @@ class RealNumberSequence(Subgenome):
     def mutate(self):
         """Perform mutation, introduce a slight variation.
 
-        Values are mutated by randomly replacing `self.__mutation_probability` sequence members with random values
+        Values are mutated by randomly replacing `self._mutation_probability` sequence members with random values
         in [self.__min_value, self.__max_value) range.
         """
         # Generate an array of random numbers.
@@ -68,14 +68,14 @@ class RealNumberSequence(Subgenome):
         # Create a mask of the same shape as `self.values`.
         mask = np.random.random(self.num_of_values)
 
-        # Make approximately `self.__mutation_probability` values in `mask` equal to 0.0, and the rest equal to 1.0.
-        mask[mask > self.__mutation_probability] = 1.0
+        # Make approximately `self._mutation_probability` values in `mask` equal to 0.0, and the rest equal to 1.0.
+        mask[mask > self._mutation_probability] = 1.0
         mask[mask != 1.0] = 0.0
 
         # Invert the `mask`. `mask_inv` will have 1.0 where `mask` has 0.0 and vice versa.
         mask_inv = np.abs(mask - 1.0)
 
         # Preserve the values denoted by 1.0s in `mask`, and replace the rest with values from `random_array`.
-        # This assigns random values to approximately `self.__mutation_probability` percent of the values in
+        # This assigns random values to approximately `self._mutation_probability` percent of the values in
         # `self.values`.
         self.values = self.values * mask + random_array * mask_inv

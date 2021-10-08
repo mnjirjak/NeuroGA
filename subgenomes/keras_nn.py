@@ -56,13 +56,13 @@ class KerasNN(Subgenome):
             model_weights=model_weights_copy,
             min_weight_value=self.__min_weight_value,
             max_weight_value=self.__max_weight_value,
-            mutation_probability=self.__mutation_probability
+            mutation_probability=self._mutation_probability
         )
 
     def mutate(self):
         """Perform mutation, introduce a slight variation.
 
-        Neural network weights are mutated by replacing `self.__mutation_probability` random weights with random values
+        Neural network weights are mutated by replacing `self._mutation_probability` random weights with random values
         in [self.__min_weight_value, self.__max_weight_value) range.
         """
         for i in range(len(self.model_weights)):
@@ -73,14 +73,14 @@ class KerasNN(Subgenome):
             # Create a mask of the same shape as `model_weights_copy[i]`.
             mask = np.random.random(self.model_weights[i].shape)
 
-            # Make approximately `self.__mutation_probability` values in `mask` equal to 0.0, and the rest equal to 1.0.
-            mask[mask > self.__mutation_probability] = 1.0
+            # Make approximately `self._mutation_probability` values in `mask` equal to 0.0, and the rest equal to 1.0.
+            mask[mask > self._mutation_probability] = 1.0
             mask[mask != 1.0] = 0.0
 
             # Invert the `mask`. `mask_inv` will have 1.0 where `mask` has 0.0 and vice versa.
             mask_inv = np.abs(mask - 1.0)
 
             # Preserve the weights denoted by 1.0s in `mask_inv`, and replace the rest with values from
-            # `random_weights`. This assigns random values to approximately `self.__mutation_probability` percent of the
+            # `random_weights`. This assigns random values to approximately `self._mutation_probability` percent of the
             # values in `self.model_weights[i]`.
             self.model_weights[i] = self.model_weights[i] * mask + random_weights * mask_inv

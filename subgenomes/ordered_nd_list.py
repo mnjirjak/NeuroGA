@@ -44,17 +44,17 @@ class OrderedNDList(Subgenome):
         return OrderedNDList(
             # Create a copy of items. This avoids the problem with references.
             items=copy.deepcopy(child),
-            mutation_probability=self.__mutation_probability
+            mutation_probability=self._mutation_probability
         )
 
     def mutate(self):
         """Perform mutation, introduce a slight variation.
 
         The list is mutated by conducting `num_swaps` swaps. This ensures variation is introduced and, at the same time,
-        no duplicates are inserted. The `num_swaps` is calculated with respect to `self.__mutation_probability` and is
+        no duplicates are inserted. The `num_swaps` is calculated with respect to `self._mutation_probability` and is
         1 or higher.
         """
-        num_swaps = max(1, int(round(self.__mutation_probability / 2 * len(self.items))))
+        num_swaps = max(1, int(round(self._mutation_probability / 2 * len(self.items))))
 
         for i in range(num_swaps):
             random_index_1 = np.random.randint(low=0, high=len(self.items))
