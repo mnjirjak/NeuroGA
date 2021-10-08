@@ -4,12 +4,11 @@ import numpy as np
 
 class RealNumberSequence(Subgenome):
     """A sequence of real numbers bound by min and max values."""
-    def __init__(self, num_of_values=2, min_value=0.0, max_value=1.0, values=0.0, mutation_probability=None):
+    def __init__(self, num_of_values=2, min_value=0.0, max_value=1.0, mutation_probability=None):
         """
         :param int num_of_values: The number of real values in the sequence.
         :param float min_value: Minimum value of the number.
         :param float max_value: Maximum value of the number.
-        :param np.array[float] values: Current values.
         :param float mutation_probability: Local mutation probability. If not specified, global mutation probability
                                            will be used.
         """
@@ -20,7 +19,7 @@ class RealNumberSequence(Subgenome):
         self.__min_value = min_value
         self.__max_value = max_value
 
-        self.values = values
+        self.values = np.zeros(self.num_of_values)
 
     def randomize(self):
         """Randomly assign values in [self.__min_value, self.__max_value) range."""
@@ -43,14 +42,18 @@ class RealNumberSequence(Subgenome):
         # Invert the `mask`. `mask_inv` will have 1.0 where `mask` has 0.0 and vice versa.
         mask_inv = np.abs(mask - 1.0)
 
-        return RealNumberSequence(
+        # Create new child object.
+        child = RealNumberSequence(
             num_of_values=self.num_of_values,
             min_value=self.__min_value,
             max_value=self.__max_value,
-            # Take a portion of the values from `self.values` and the rest from `partner.values`.
-            values=(self.values * mask + partner.values * mask_inv),
             mutation_probability=self.mutation_probability
         )
+
+        # Take a portion of the values from `self.values` and the rest from `partner.values`.
+        child.values = (self.values * mask + partner.values * mask_inv)
+
+        return child
 
     def mutate(self):
         """Perform mutation, introduce a slight variation.
