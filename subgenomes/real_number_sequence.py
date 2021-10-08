@@ -42,7 +42,7 @@ class RealNumberSequence(Subgenome):
         # Invert the `mask`. `mask_inv` will have 1.0 where `mask` has 0.0 and vice versa.
         mask_inv = np.abs(mask - 1.0)
 
-        # Create new child object.
+        # Create a new child object.
         child = RealNumberSequence(
             num_of_values=self.num_of_values,
             min_value=self.__min_value,

@@ -31,7 +31,7 @@ class RealNumber(Subgenome):
         :param RealNumber partner
         :return: RealNumber
         """
-        # Create new child object.
+        # Create a new child object.
         child = RealNumber(
             min_value=self.__min_value,
             max_value=self.__max_value,
