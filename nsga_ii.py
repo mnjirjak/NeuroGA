@@ -19,7 +19,7 @@ class NSGAII:
                  offspring_size=20,
                  num_generations=10,
                  num_solutions_tournament=3,
-                 recombination_probability=0.8,
+                 recombination_probability=0.9,
                  mutation_probability_global=0.05,
                  data_train=None,
                  validate=False,
