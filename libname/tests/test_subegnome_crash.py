@@ -1,15 +1,15 @@
 import unittest
 import numpy as np
 
-from fitness_function import FitnessFunction, FitnessFunctionType
-from genome import Genome
-from nsga_ii import NSGAII
+from libname.fitness_function import FitnessFunction, FitnessFunctionType
+from libname.genome import Genome
+from libname.nsga_ii import NSGAII
 
-from subgenomes.real_number import RealNumber
-from subgenomes.real_number_sequence import RealNumberSequence
-from subgenomes.real_number_sequence_individual import RealNumberSequenceIndividual
-from subgenomes.ordered_nd_list import OrderedNDList
-from subgenomes.keras_nn import KerasNN
+from libname.subgenomes.real_number import RealNumber
+from libname.subgenomes.real_number_sequence import RealNumberSequence
+from libname.subgenomes.real_number_sequence_individual import RealNumberSequenceIndividual
+from libname.subgenomes.ordered_nd_list import OrderedNDList
+from libname.subgenomes.keras_nn import KerasNN
 
 
 def run_algo_crash_test(subgenome):

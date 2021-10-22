@@ -1,4 +1,4 @@
-from subgenome import Subgenome
+from libname.subgenome import Subgenome
 import numpy as np
 
 

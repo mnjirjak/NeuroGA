@@ -1,5 +1,5 @@
-from subgenome import Subgenome
-from subgenomes.real_number import RealNumber
+from libname.subgenome import Subgenome
+from libname.subgenomes.real_number import RealNumber
 
 
 class RealNumberSequenceIndividual(Subgenome):

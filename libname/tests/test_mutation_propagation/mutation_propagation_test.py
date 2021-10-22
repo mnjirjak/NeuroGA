@@ -1,8 +1,8 @@
 import unittest
 
-from fitness_function import FitnessFunction, FitnessFunctionType
-from genome import Genome
-from nsga_ii import NSGAII
+from libname.fitness_function import FitnessFunction, FitnessFunctionType
+from libname.genome import Genome
+from libname.nsga_ii import NSGAII
 
 
 class MutationPropagationTest(unittest.TestCase):
