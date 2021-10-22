@@ -4,9 +4,10 @@ from subgenomes.real_number import RealNumber
 
 class RealNumberSequenceIndividual(Subgenome):
     """A sequence of RealNumber objects bound by min and max values."""
+
     def __init__(self, num_of_values, min_value=0.0, max_value=1.0, mutation_probability=None):
         """
-        :param int num_of_values: The number of RealNumber objects in the sequence.
+        :param int num_of_values: The number of `RealNumber` objects in the sequence.
         :param float min_value: Minimum value of the number.
         :param float max_value: Maximum value of the number.
         :param float mutation_probability: Local mutation probability. If not specified, global mutation probability
@@ -28,14 +29,16 @@ class RealNumberSequenceIndividual(Subgenome):
         ]
 
     def randomize(self):
-        """Call `randomize()` for each RealNumber object in `self.real_numbers`."""
+        """Call `randomize()` for each `RealNumber` object in `self.real_numbers`."""
         for real_number in self.real_numbers:
             real_number.randomize()
 
     def recombination(self, partner):
-        """Perform recombination between self and partner.
+        """Perform recombination between self and `partner`.
 
         Call `recombination(partner)` for each RealNumber object in `self.real_numbers`.
+
+        :param RealNumberSequenceIndividual partner
         """
         child_real_numbers = []
 
@@ -62,7 +65,10 @@ class RealNumberSequenceIndividual(Subgenome):
             real_number.mutate()
 
     def set_mutation_probability(self, mutation_probability):
-        """Set `self._mutation_probability` to desired value and propagate it to subgenomes in `self.real_numbers`."""
+        """Set `self._mutation_probability` to desired value and propagate it to subgenomes in `self.real_numbers`.
+
+        :param float mutation_probability
+        """
         super().set_mutation_probability(mutation_probability)
 
         for real_number in self.real_numbers:

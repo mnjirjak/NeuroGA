@@ -4,6 +4,7 @@ import numpy as np
 
 class RealNumber(Subgenome):
     """A real number bound by min and max values."""
+
     def __init__(self, min_value=0.0, max_value=1.0, mutation_probability=None):
         """
         :param float min_value: Minimum value of the number.

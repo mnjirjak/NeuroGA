@@ -4,6 +4,7 @@ import numpy as np
 
 class RealNumberSequence(Subgenome):
     """A sequence of real numbers bound by min and max values."""
+
     def __init__(self, num_of_values, min_value=0.0, max_value=1.0, mutation_probability=None):
         """
         :param int num_of_values: The number of real values in the sequence.

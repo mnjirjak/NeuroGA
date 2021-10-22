@@ -9,6 +9,7 @@ class OrderedNDList(Subgenome):
 
     List is without duplicates and the order of the items matters.
     """
+
     def __init__(self, items, mutation_probability=None):
         """
         :param List[Object] items: A list of items whose optimal order needs to be found.

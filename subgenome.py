@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 
 
 class Subgenome(ABC):
-    """A class used to define a Subgenome and its methods.
+    """A class used to define a subgenome and its methods.
 
     Each subgenome must extend it.
     """
@@ -31,12 +31,17 @@ class Subgenome(ABC):
         pass
 
     def get_mutation_probability(self):
-        """Retrieve `self._mutation_probability`."""
+        """Retrieve `self._mutation_probability`.
+
+        :return: float
+        """
         return self._mutation_probability
 
     def set_mutation_probability(self, mutation_probability):
         """Set `self._mutation_probability` to desired value.
 
         This method should be overridden and adapted in complex subgenomes which are composed of other subgenomes.
+
+        :param float mutation_probability
         """
         self._mutation_probability = mutation_probability
