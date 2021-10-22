@@ -14,7 +14,7 @@ class RealNumberMutationPropagationTest(MutationPropagationTest):
         :param float mutation_probability_global: Global mutation probability forwarded to the algorithm.
         """
 
-        # Both probabilites are `None`, so use default parameter values.
+        # Both probabilities are `None`, so use default parameter values.
         if mutation_probability is None and mutation_probability_global is None:
             pareto_fronts = self.run_algo(
                 subgenome=RealNumber()
@@ -30,7 +30,7 @@ class RealNumberMutationPropagationTest(MutationPropagationTest):
             pareto_fronts = self.run_algo(
                 subgenome=RealNumber(mutation_probability=mutation_probability)
             )
-        # Both probabilites are not `None`, so forward them to the algorithm.
+        # Both probabilities are not `None`, so forward them to the algorithm.
         else:
             pareto_fronts = self.run_algo(
                 subgenome=RealNumber(mutation_probability=mutation_probability),
@@ -38,7 +38,11 @@ class RealNumberMutationPropagationTest(MutationPropagationTest):
             )
 
         # Check if correct values are propagated.
-        self.examine_simple(mutation_probability, mutation_probability_global, pareto_fronts[0][0].get_subgenomes()['var'])
+        self.examine_simple(
+            mutation_probability,
+            mutation_probability_global,
+            pareto_fronts[0][0].get_subgenomes()['var']
+        )
 
     @parameterized.expand([
         [None, None],

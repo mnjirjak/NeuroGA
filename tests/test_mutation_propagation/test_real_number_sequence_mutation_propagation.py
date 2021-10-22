@@ -43,7 +43,12 @@ class RealNumberSequenceMutationPropagationTest(MutationPropagationTest):
                 mutation_probability_global=mutation_probability_global
             )
 
-        self.examine_simple(mutation_probability, mutation_probability_global, pareto_fronts[0][0].get_subgenomes()['var'])
+        # Check if correct values are propagated.
+        self.examine_simple(
+            mutation_probability,
+            mutation_probability_global,
+            pareto_fronts[0][0].get_subgenomes()['var']
+        )
 
     @parameterized.expand([
         [None, None],
