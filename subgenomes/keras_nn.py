@@ -5,6 +5,7 @@ import numpy as np
 
 class KerasNN(Subgenome):
     """A Keras neural network whose weights are in [min_weight_value, max_weight_value] range."""
+
     def __init__(self, model_weights=None, min_weight_value=-1.0, max_weight_value=1.0, mutation_probability=None):
         """
         :param List[numpy.ndarray] model_weights: A list of layer weights.
@@ -40,7 +41,7 @@ class KerasNN(Subgenome):
 
         for i in range(len(model_weights_copy)):
             # Create a mask of the same shape as `model_weights_copy[i]`.
-            mask = np.random.random(model_weights_copy[i].size)
+            mask = np.random.random(model_weights_copy[i].shape)
 
             # Make approximately 50% of the `mask` values 1.0, and 50% 0.0.
             mask[mask >= 0.5] = 1.0
