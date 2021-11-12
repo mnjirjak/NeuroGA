@@ -53,11 +53,11 @@ pareto_fronts = algo.optimize()
 ```
 
 ## References
-<a id="1">[1]</a> Deb, K. et al.,  "A fast and elitist multiobjective genetic algorithm: NSGA-II"
+<a id="1">[1]</a> Deb, K. et al.,  "A fast and elitist multiobjective genetic algorithm: NSGA-II"\
 Journal: IEEE Transactions on Evolutionary Computation, vol. 6, num. 2, pages 182-197
 
-<a id="2">[2]</a> Chollet, F. et al.,  "Keras"
+<a id="2">[2]</a> Chollet, F. et al.,  "Keras"\
 URL: https://keras.io
 
-<a id="3">[3]</a> Harris, C. R. et al.,  "Array programming with NumPy"
+<a id="3">[3]</a> Harris, C. R. et al.,  "Array programming with NumPy"\
 Journal: Nature, vol. 585, num. 7825, pages 357-362
