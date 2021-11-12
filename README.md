@@ -1,4 +1,15 @@
+
 # NeuroGA
+
+NeuroGA is a Python library for optimization. It uses NSGA-II [[1]](#1) genetic algorithm and supports complex solutions, that is, a solution's genome can contain variables of different types simultaneously, such as decimal numbers and categorical options. So far, 5 subgenomes are available:
+- KerasNN &#8594; Evolves the weights of an arbitrary Keras [[2]](#2) model.
+- OrderedNDList &#8594; Searches for the best order of categorical variables in a list without repetition.
+- RealNumber &#8594; Defines a decimal number, and the minimum and maximum value that it can take.
+- RealNumberSequence &#8594; Defines a sequence of decimal numbers. The advantage of the subgenome over `RealNumber` is the easier definition of multiple variables and the use of NumPy [[3]](#3) matrix operations to accelerate recombination and mutation.
+- RealNumberSequenceIndividual &#8594; Complex subgenome, consists of multiple `RealNumber` subgenomes. Ultimately, it works identically to `RealNumberSequence`, however, the goal is to demonstrate how a new subgenome can be created using other subgenomes. 
+
+## Example usage
+The optimization process strives to find the global optimums of two fitness function, `evaluate1` and `evaluate2`. The genome consists of 2 decimal numbers, `x` and `y`. The solutions are returned in the form of pareto fronts, where the first pareto front contains the utmost solutions.
 ```Python
 def evaluate1(solution, data):
     # The function reaches its global minimum of 0 for x=10.
@@ -37,6 +48,16 @@ algo = NSGAII(
     on_generation_finish_callback=on_generation_finish
 )
 
-# Start the optimization process and fetch the result.
+# Start the optimization process and fetch the results.
 pareto_fronts = algo.optimize()
 ```
+
+## References
+<a id="1">[1]</a> Deb, K. et al.,  "A fast and elitist multiobjective genetic algorithm: NSGA-II"
+Journal: IEEE Transactions on Evolutionary Computation, vol. 6, num. 2, pages 182-197
+
+<a id="2">[2]</a> Chollet, F. et al.,  "Keras"
+URL: https://keras.io
+
+<a id="3">[3]</a> Harris, C. R. et al.,  "Array programming with NumPy"
+Journal: Nature, vol. 585, num. 7825, pages 357-362
