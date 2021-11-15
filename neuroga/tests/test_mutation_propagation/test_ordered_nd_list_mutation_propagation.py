@@ -1,7 +1,7 @@
-from libname.tests.test_mutation_propagation.mutation_propagation_test import MutationPropagationTest
+from neuroga.tests.test_mutation_propagation.mutation_propagation_test import MutationPropagationTest
 from parameterized import parameterized
 
-from libname.subgenomes.ordered_nd_list import OrderedNDList
+from neuroga.subgenomes.ordered_nd_list import OrderedNDList
 
 
 class OrderedNDListMutationPropagationTest(MutationPropagationTest):

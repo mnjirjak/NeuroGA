@@ -1,5 +1,5 @@
 import copy
-from libname.subgenome import Subgenome
+from neuroga.subgenome import Subgenome
 import numpy as np
 
 

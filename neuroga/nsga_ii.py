@@ -1,7 +1,7 @@
 import math
 import numpy as np
 import copy
-from libname.fitness_function import FitnessFunctionType
+from neuroga.fitness_function import FitnessFunctionType
 
 
 class NSGAII:

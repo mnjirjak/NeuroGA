@@ -1,7 +1,7 @@
-from libname.tests.test_mutation_propagation.mutation_propagation_test import MutationPropagationTest
+from neuroga.tests.test_mutation_propagation.mutation_propagation_test import MutationPropagationTest
 from parameterized import parameterized
 
-from libname.subgenomes.real_number import RealNumber
+from neuroga.subgenomes.real_number import RealNumber
 
 
 class RealNumberMutationPropagationTest(MutationPropagationTest):
