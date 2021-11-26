@@ -71,6 +71,6 @@ class RealNumberSequence(Subgenome):
         """
 
         mutation_values = np.random.rand(self.__num_of_values) * \
-            (self.__max_mutation_value - self.__min_mutation_value) - self.__min_mutation_value
+            (self.__max_mutation_value - self.__min_mutation_value) + self.__min_mutation_value
 
-        self.values = min(max(self.values + mutation_values, self.__min_value), self.__max_value)
+        self.values = np.minimum(np.maximum(self.values + mutation_values, self.__min_value), self.__max_value)
