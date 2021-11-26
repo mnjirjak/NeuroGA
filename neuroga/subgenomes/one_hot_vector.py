@@ -8,7 +8,7 @@ class OneHotVector(Subgenome):
     A list of zeros with only a single member equal to 1.
     """
 
-    def __init__(self, num_of_items, items=None, mutation_probability=None):
+    def __init__(self, num_of_items, mutation_probability=None):
         """
         :param int num_of_items: Specifies vector length, i.e. the number of members.
         :param List[np.uint8] items: One-hot vector. Primarily used when creating a child during recombination.
@@ -19,12 +19,11 @@ class OneHotVector(Subgenome):
         super().__init__(mutation_probability)
 
         self.__num_of_items = num_of_items
-        self.items = items
+        self.items = np.zeros(self.__num_of_items, dtype=np.uint8)
 
     def randomize(self):
         """Create a random one-hot vector."""
 
-        self.items = np.zeros(self.__num_of_items, dtype=np.uint8)
         self.items[np.random.randint(0, self.__num_of_items)] = 1
 
     def recombination(self, partner):
@@ -45,12 +44,16 @@ class OneHotVector(Subgenome):
         child_items = np.zeros(self.__num_of_items, dtype=np.uint8)
         child_items[recombination_index] = 1
 
-        return OneHotVector(
+        # Create a new child object.
+        child = OneHotVector(
             num_of_items=self.__num_of_items,
-            # Forward the vector to the child.
-            items=child_items,
             mutation_probability=self._mutation_probability
         )
+
+        # Forward the vector to the child.
+        child.items = child_items
+
+        return child
 
     def mutate(self):
         """Perform mutation, introduce a slight variation.
