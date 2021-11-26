@@ -7,7 +7,7 @@ class FitnessFunctionType(Enum):
     MIN - FF we want to minimize.
     MAX - FF we want to maximize.
     """
-    MIN = 3
+    MIN = 1
     MAX = 2
 
 
