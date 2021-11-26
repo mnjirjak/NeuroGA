@@ -62,9 +62,14 @@ class NSGAII:
         generation_number = 1
         population = self.__generate_random_population()
 
-        non_dominated_sorted_population = self.__perform_non_dominated_sort(population)
-        for i, _ in enumerate(non_dominated_sorted_population):
-            self.__calculate_crowding_distance(non_dominated_sorted_population[i])
+        # If there is only a single evaluation function, a large speed-up can be made by
+        # swapping non-dominated sort and crowding distance calculation with a simple 1D sort.
+        if len(self.__fitness_functions) > 1:
+            non_dominated_sorted_population = self.__perform_non_dominated_sort(population)
+            for i, _ in enumerate(non_dominated_sorted_population):
+                self.__calculate_crowding_distance(non_dominated_sorted_population[i])
+        else:
+            non_dominated_sorted_population = self.__perform_1d_sort(population)
 
         while True:
             if generation_number > self.__num_generations:
@@ -74,17 +79,23 @@ class NSGAII:
             offspring = self.__generate_offspring(population)
             population += offspring
 
-            non_dominated_sorted_population = self.__perform_non_dominated_sort(population)
-            for i, _ in enumerate(non_dominated_sorted_population):
-                self.__calculate_crowding_distance(non_dominated_sorted_population[i])
+            # If we have a single evaluation function, perform 1D sort.
+            if len(self.__fitness_functions) > 1:
+                non_dominated_sorted_population = self.__perform_non_dominated_sort(population)
+                for i, _ in enumerate(non_dominated_sorted_population):
+                    self.__calculate_crowding_distance(non_dominated_sorted_population[i])
+            else:
+                non_dominated_sorted_population = self.__perform_1d_sort(population)
 
             # Choose the best individuals for the next generation.
             non_dominated_sorted_population = self.__choose_next_generation(non_dominated_sorted_population)
 
-            # When choosing individuals for the next generation, there is a chance some solutions from the last pareto
-            # front will be removed, which affects crowding distance metric. Therefore, we calculate the correct
-            # crowding distances for the last pareto front.
-            self.__calculate_crowding_distance(non_dominated_sorted_population[-1])
+            # If we have a single evaluation function, avoid crowding distance calculation.
+            if len(self.__fitness_functions) > 1:
+                # When choosing individuals for the next generation, there is a chance some solutions from the last pareto
+                # front will be removed, which affects crowding distance metric. Therefore, we calculate the correct
+                # crowding distances for the last pareto front.
+                self.__calculate_crowding_distance(non_dominated_sorted_population[-1])
 
             # Put the individuals from all pareto fronts in the same list.
             population = [solution for pareto_front in non_dominated_sorted_population for solution in pareto_front]
@@ -268,6 +279,36 @@ class NSGAII:
                 sorted_pareto_front[i].crowding_distance += (
                     (sorted_pareto_front[i + 1].fitness_values_train[k] - sorted_pareto_front[i - 1].fitness_values_train[k]) / ff_range
                 )
+
+    def __perform_1d_sort(self, population):
+        """Performs a simple 1D sort.
+
+        Sorts the `population` according to the one fitness function, taking into account the type of
+        the problem (minimization or maximization). After that, each solution is given a rank and positioned
+        on a separate pareto front. Crowding distance remains 0 for all solutions during the optimization process.
+
+        :param List[Genome] population: Individuals that need to be ranked and sorted.
+        :return: List[List[Genome]]: Sorted population.
+        """
+
+        # Determine sort type with regards to the problem.
+        if self.__fitness_functions[0].function_type == FitnessFunctionType.MIN:
+            reverse_sort = False
+        elif self.__fitness_functions[0].function_type == FitnessFunctionType.MAX:
+            reverse_sort = True
+
+        # Sort the population.
+        sorted_population = sorted(population, key=lambda solution: solution.fitness_values_train[0], reverse=reverse_sort)
+
+        # Rank each solution and it on a separate pareto front.
+        object_pareto_fronts = []
+
+        for index, solution in enumerate(sorted_population):
+            # Lower rank indicates higher quality.
+            solution.rank = index
+            object_pareto_fronts.append([solution])
+
+        return object_pareto_fronts
 
     def __generate_offspring(self, population):
         """Generate `self.__offspring_size` number of individuals.
