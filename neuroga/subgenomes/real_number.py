@@ -5,10 +5,17 @@ import numpy as np
 class RealNumber(Subgenome):
     """A real number bound by min and max values."""
 
-    def __init__(self, min_value=0.0, max_value=1.0, mutation_probability=None):
+    def __init__(self,
+                 min_value=-1.0,
+                 max_value=1.0,
+                 min_mutation_value=-0.05,
+                 max_mutation_value=0.05,
+                 mutation_probability=None):
         """
         :param float min_value: Minimum value of the number.
         :param float max_value: Maximum value of the number.
+        :param float min_mutation_value: Minimum value when choosing mutation.
+        :param float max_mutation_value: Maximum value when choosing mutation.
         :param float mutation_probability: Local mutation probability. If not specified, global mutation probability
                                            will be used.
         """
@@ -16,6 +23,9 @@ class RealNumber(Subgenome):
 
         self.__min_value = min_value
         self.__max_value = max_value
+
+        self.__min_mutation_value = min_mutation_value
+        self.__max_mutation_value = max_mutation_value
 
         self.real_number = 0.0
 
@@ -47,13 +57,10 @@ class RealNumber(Subgenome):
     def mutate(self):
         """Perform mutation, introduce a slight variation.
 
-        Value is mutated by adding or subtracting a small number. After the mutation, we must check min and max
-        boundaries.
-
-        Two key steps:
-        1. Select sign (+ or -).
-        2. Select the degree of change with respect to `self._mutation_probability` and `self.real_number`.
+        Value is mutated by adding a random number in [self.__min_mutation_value, self.__max_mutation_value)
+        range. After the mutation, we must check min and max boundaries.
         """
-        self.real_number += (1.0 if np.random.rand() <= 0.5 else -1.0) * \
-                            (np.random.rand() * self._mutation_probability) * self.real_number
-        self.real_number = min(max(self.real_number, self.__min_value), self.__max_value)
+        mutation_value = np.random.rand() * \
+            (self.__max_mutation_value - self.__min_mutation_value) - self.__min_mutation_value
+
+        self.real_number = min(max(self.real_number + mutation_value, self.__min_value), self.__max_value)
