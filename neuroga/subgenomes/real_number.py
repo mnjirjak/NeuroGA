@@ -64,6 +64,6 @@ class RealNumber(Subgenome):
         range. After the mutation, we must check min and max boundaries.
         """
         mutation_value = np.random.rand() * \
-            (self.__max_mutation_value - self.__min_mutation_value) - self.__min_mutation_value
+            (self.__max_mutation_value - self.__min_mutation_value) + self.__min_mutation_value
 
         self.real_number = min(max(self.real_number + mutation_value, self.__min_value), self.__max_value)
