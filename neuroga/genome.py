@@ -1,3 +1,6 @@
+import numpy as np
+
+
 class Genome:
     """A class that merges multiple subgenomes."""
     def __init__(self, subgenomes):
@@ -35,7 +38,9 @@ class Genome:
     def mutate(self):
         """Mutate all the subgenomes."""
         for _, subgenome in self.__subgenomes.items():
-            subgenome.mutate()
+            # Choose whether to mutate the subgenome with respect to its mutation probability.
+            if np.random.rand() <= subgenome.get_mutation_probability():
+                subgenome.mutate()
 
     def set_mutation_probabilities(self, mutation_probability_global):
         """Set mutation probabilities for subgenomes.

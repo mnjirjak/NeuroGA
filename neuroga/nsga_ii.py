@@ -345,8 +345,7 @@ class NSGAII:
             child = copy.deepcopy(parent_1)
 
         # Mutate a child, introduce slight variation.
-        if np.random.rand() <= self.__mutation_probability_global:
-            child.mutate()
+        child.mutate()
 
         # Evaluate the child.
         child.fitness_values_train = self.__evaluate_solution(child, self.__data_train)
