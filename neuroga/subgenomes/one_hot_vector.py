@@ -62,20 +62,19 @@ class OneHotVector(Subgenome):
         or one place to the right. If the start or the end of the vector is reached, mutation is not introduced.
         """
 
-        if np.random.rand() <= 0.05:
-            # Get the position of a 1.
-            index = np.where(self.items == 1)[0][0]
+        # Get the position of a 1.
+        index = np.where(self.items == 1)[0][0]
 
-            # Save the position for swapping.
-            old_index = index
+        # Save the position for swapping.
+        old_index = index
 
-            # Randomly move to the right or to the left.
-            if np.random.rand() >= 0.5:
-                index += 1
-            else:
-                index -= 1
+        # Randomly move to the right or to the left.
+        if np.random.rand() >= 0.5:
+            index += 1
+        else:
+            index -= 1
 
-            # If `index` is in vector position range, perform the mutation.
-            if 0 <= index < self.__num_of_items:
-                self.items[old_index] = 0
-                self.items[index] = 1
+        # If `index` is in vector position range, perform the mutation.
+        if 0 <= index < self.__num_of_items:
+            self.items[old_index] = 0
+            self.items[index] = 1
