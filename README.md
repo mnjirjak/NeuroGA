@@ -11,17 +11,23 @@ NeuroGA is a Python library for optimization. It uses NSGA-II [[1]](#1) genetic 
 ## Example usage
 The optimization process strives to find the global optimums of two fitness function, `evaluate1` and `evaluate2`. The genome consists of 2 decimal numbers, `x` and `y`. The solutions are returned in the form of pareto fronts, where the first pareto front contains the utmost solutions.
 ```Python
+from neuroga.nsga_ii import NSGAII
+from neuroga.genome import Genome
+from neuroga.subgenomes.real_number import RealNumber
+from neuroga.fitness_function import FitnessFunction, FitnessFunctionType
+
+
 def evaluate1(solution, data):
-    # The function reaches its global minimum of 0 for x=10.
-    return abs(solution.get_subgenomes()['x'].real_number) - 10
+    # The function reaches its global minimum of -10 for x=15.
+    return abs(solution.get_subgenomes()['x'].real_number - 15) - 10
 
 def evaluate2(solution, data):
-    # The function reaches its global maximum of 20 for y=0.
-    return -abs(solution.get_subgenomes()['y'].real_number) + 20
+    # The function reaches its global maximum of 20 for y=-5.
+    return -abs(solution.get_subgenomes()['y'].real_number + 5) + 20
 
 def on_generation_finish(generation_number, num_generations, pareto_fronts):
     # Print progress.
-    print(generation_number,'/',num_generations)
+    print(generation_number, '/', num_generations)
 
 
 # Algorithm initialization.
