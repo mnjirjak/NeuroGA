@@ -45,7 +45,8 @@ class ModifiedPeptide(Subgenome):
     def randomize(self):
         """Ovdje možemo imati dva pristupa:
         1. Na random inicijaliziramo peptide koji sadrže bite skupine.
-        2. Mrvicu modificiramo početni peptid, pa populacija bude u okolini početnog peptida. (za ovo se može mutacija pozavti nekoliko puta)
+        2. Mrvicu modificiramo početni peptid, pa populacija bude u okolini početnog peptida. (za ovo se
+        može mutacija pozavti nekoliko puta)
         """
 
         num_amino_acids = np.random.randint(
@@ -70,57 +71,75 @@ class ModifiedPeptide(Subgenome):
         self.__peptide = list(np.random.permutation(self.__peptide))
 
     def recombination(self, partner):
-        """Combine this individual with `partner` using arithmetic mean.
+        """Combine this individual with `partner` using single point crossover.
 
-        An arithmetic mean of two values which are in [self.__min_value, self.__max_value) range is also in the same
-        range. Therefore, we don't need to check min and max boundaries after recombination.
+        While combining the two parents, we must ensure a `child` contains all the important amino groups contained in
+        `self.__important_groups` in the right amount.
 
-        :param RealNumber partner
-        :return: RealNumber
+        :param ModifiedPeptide partner
+        :return: ModifiedPeptide
         """
+        # Crossover points for each parent are approximately in the middle of the peptide sequences.
         crossover_index_parent_1 = len(self.__peptide) // 2
         crossover_index_parent_2 = len(partner.get_peptide()) // 2
 
+        # Merge first part of the first parent, and second part of the second parent.
         child_peptide = self.__peptide[:crossover_index_parent_1] + partner.get_peptide()[crossover_index_parent_2:]
 
-        # Što ako su important grupe jedna aminokiselina, onda imamo problem
+        # When slicing parents and creating a child sequence, there is a high chance of a child sequence having too much
+        # or too little instances of specific (or all) important amino groups.
 
-        # Dodaj grupe koje fale
-        # možda na random grupe staviti
-        for group in self.__important_groups:
+        # Iterate over all important groups in a random order.
+        for group in np.random.permutation(list(self.__important_groups.keys())):
+
+            # Check how many instances of the `group` there are in a child peptide.
             count = child_peptide.count(group)
 
-            for i in range(self.__important_groups[group] - count):
-                if np.random.rand() < 0.5:
-                    r = self.__peptide
-                else:
-                    r = partner.get_peptide()
+            if self.__important_groups[group] > count:
+                # There are `self.__important_groups[group] - count` instances missing. Add them.
 
-                indices = [i for i in range(len(r)) if r[i] == group]
+                for _ in range(self.__important_groups[group] - count):
+                    # Randomly choose a parent.
+                    if np.random.rand() < 0.5:
+                        parent = self.__peptide
+                    else:
+                        parent = partner.get_peptide()
 
-                random_index = indices[np.random.randint(low=0, high=len(indices))]
-                random_index_modified = int(((random_index + 1) / len(r)) * len(child_peptide))
+                    # Get the positions (indices) of `group` in `parent`.
+                    indices = [index for index in range(len(parent)) if parent[index] == group]
 
-                # Napraviti da se može i na kraj insertati
-                child_peptide.insert(random_index_modified, group)
+                    # Choose a random index from the available ones. This effectively picks one of the groups of type
+                    # `group` from `parent`.
+                    random_index = indices[np.random.randint(len(indices))]
 
-        # Makni grupe koje su viška
-        # možda na random grupe staviti
-        for group in self.__important_groups:
-            count = child_peptide.count(group)
+                    # Since `parent` and `child_peptide` can have different lengths, we want to use relative positioning
+                    # to calculate the appropriate insertion index in `child_peptide`.
+                    # E. g., if `parent` is of length 10, and the chosen group is situated at index 5, then the same
+                    # group should be inserted somewhere around index 50 if `child_peptide` is of length 100.
+                    random_index_corrected = int((random_index / (len(parent) - 1)) * len(child_peptide))
 
-            # Ovdje ig_dict[group] nes mije biti veći od counta, čini mi se.
-            for i in range(count - self.__important_groups[group]):
-                indices = [i for i in range(len(child_peptide)) if child_peptide[i] == group]
+                    # Insert `group` at the corrected index.
+                    child_peptide.insert(random_index_corrected, group)
 
-                random_index = indices[np.random.randint(low=0, high=len(indices))]
+            elif count > self.__important_groups[group]:
+                # There are `count - self.__important_groups[group]` instances extra. Remove them.
 
-                del child_peptide[random_index]
+                for _ in range(count - self.__important_groups[group]):
+                    # Get the positions (indices) of `group` in `child_peptide`.
+                    indices = [index for index in range(len(child_peptide)) if child_peptide[index] == group]
 
+                    # Choose a random index from the available ones. This effectively picks one of the groups of type
+                    # `group` from `child_peptide`.
+                    random_index = indices[np.random.randint(len(indices))]
 
+                    # Remove the chosen group from `child_peptide`.
+                    del child_peptide[random_index]
 
+            # Otherwise, `count` is equal to `self.__important_groups[group]` and no modifications of `child_peptide`
+            # are required.
 
-        c = ModifiedPeptide(
+############################################################
+        child = ModifiedPeptide(
             initial_peptide=None,
             control_mask=None,
             initial_min_length=0,
@@ -130,9 +149,9 @@ class ModifiedPeptide(Subgenome):
         )
 
         # Set child value.
-        c.set_peptide(child_peptide)
+        child.set_peptide(child_peptide)
 
-        return c
+        return child
 
     def mutate(self):
         """Perform mutation, introduce a slight variation.
