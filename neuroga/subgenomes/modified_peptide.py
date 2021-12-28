@@ -43,31 +43,33 @@ class ModifiedPeptide(Subgenome):
         self.__peptide = []
 
     def randomize(self):
-        """Ovdje možemo imati dva pristupa:
-        1. Na random inicijaliziramo peptide koji sadrže bite skupine.
-        2. Mrvicu modificiramo početni peptid, pa populacija bude u okolini početnog peptida. (za ovo se
-        može mutacija pozavti nekoliko puta)
+        """Create a random peptide.
+
+        Initial peptide length is in range [`self.__initial_min_length`, `self.__initial_max_length`], and it contains
+        all the important groups.
         """
 
+        # Randomly choose peptide length from [`self.__initial_min_length`, `self.__initial_max_length`] range, while
+        # taking into account the mandatory length of the important amino groups.
         num_amino_acids = np.random.randint(
             low=self.__initial_min_length - self.mandatory_length,
             high=self.__initial_max_length - self.mandatory_length + 1
         )
 
-        #Ovdje možeš maknuti low i ostaviti samo high i bez navođenja
+        # randomly choose amino acids indices.
         amino_acid_indices = np.random.randint(
-            low=0,
-            high=len(self.__amino_acids),
+            len(self.__amino_acids),
             size=num_amino_acids
         )
 
+        # Convert indices to amino acid single letter codes.
         self.__peptide = [self.__amino_acids[amino_acid_index] for amino_acid_index in amino_acid_indices]
 
-        # Ovdje će biti dict za important groups
-
+        # Add important groups to the end of the `self.__peptide` sequence.
         self.__peptide += \
             [group for group in self.__important_groups for _ in range(self.__important_groups[group])]
 
+        # Shuffle peptide constituents and create a random peptide sequence.
         self.__peptide = list(np.random.permutation(self.__peptide))
 
     def recombination(self, partner):
@@ -75,6 +77,9 @@ class ModifiedPeptide(Subgenome):
 
         While combining the two parents, we must ensure a `child` contains all the important amino groups contained in
         `self.__important_groups` in the right amount.
+
+        Here, we do not need to ensure peptide length is in [`self.__initial_min_length`, `self.__initial_max_length`]
+        range.
 
         :param ModifiedPeptide partner
         :return: ModifiedPeptide
@@ -165,6 +170,9 @@ class ModifiedPeptide(Subgenome):
 
         Each time, only a single type of mutation is performed. Each type of mutation has the same probability of
         being chosen.
+
+        Here, we do not need to ensure peptide length is in [`self.__initial_min_length`, `self.__initial_max_length`]
+        range.
         """
 
         random_mutation_choice = np.random.rand()
@@ -224,6 +232,7 @@ class ModifiedPeptide(Subgenome):
             - dict important_groups: A dictionary that contains the important groups and their count.
             - int length: Sums the length of all the important groups.
         """
+
         important_groups = {}
         index = 0
         length = 0
