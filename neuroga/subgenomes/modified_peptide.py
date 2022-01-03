@@ -3,44 +3,109 @@ import numpy as np
 
 
 class ModifiedPeptide(Subgenome):
-    """A real number bound by min and max values."""
+    """A peptide derived from a starting peptide sequence."""
 
     def __init__(self,
-                 initial_peptide="",
-                 control_mask=None,
-                 initial_min_length=5,
-                 initial_max_length=50,
-                 amino_acids=None,
+                 amino_acids,
+                 important_groups,
+                 mandatory_length,
+                 initial_min_length=None,
+                 initial_max_length=None,
+                 peptide=None,
                  mutation_probability=None):
-        """
-        :param float min_value: Minimum value of the number.
-        :param float max_value: Maximum value of the number.
-        :param float min_mutation_value: Minimum value when choosing mutation.
-        :param float max_mutation_value: Maximum value when choosing mutation.
+        """A generic constructor for initialization. Should not be used directly, but indirectly using `initialize` and
+        `child` class methods.
+
+        :param str amino_acids: Allowed amino acids.
+        :param dict{'str':int} important_groups: Dictionary containing extracted important groups and their quantity.
+        :param int mandatory_length: Summed lengths of all the important groups.
+        :param int initial_min_length: Minimum length of a peptide when creating the initial population.
+        :param int initial_max_length: Maximum length of a peptide when creating the initial population.
+        :param List[str] peptide: A list of peptide constituents, single letter amino acids and important groups.
         :param float mutation_probability: Local mutation probability. If not specified, global mutation probability
                                            will be used.
         """
+
         super().__init__(mutation_probability)
 
-        # Dosta ovih membera može biti private __.
-
-        self.__initial_peptide = initial_peptide
-        self.__control_mask = control_mask
-
+        self.__amino_acids = amino_acids
+        self.__important_groups = important_groups
+        self.__mandatory_length = mandatory_length
         self.__initial_min_length = initial_min_length
         self.__initial_max_length = initial_max_length
+        self.__peptide = peptide
 
-        self.__amino_acids = amino_acids
+    @classmethod
+    def initialize(cls,
+                   initial_peptide,
+                   control_mask=None,
+                   initial_min_length=5,
+                   initial_max_length=50,
+                   amino_acids=None,
+                   mutation_probability=None
+                   ):
+        """The constructor that should be used when initially specifying subgenomes. Makes one-time adjustments.
 
-        self.__important_groups = []
+        :param str initial_peptide: Contains original peptide sequence.
+        :param List[int, List[int]] control_mask: Marks important amino groups that should be present in a peptide.
+        :param int initial_min_length: Minimum length of a peptide when creating the initial population.
+        :param int initial_max_length: Maximum length of a peptide when creating the initial population.
+        :param str amino_acids: Allowed amino acids.
+        :param float mutation_probability: Local mutation probability. If not specified, global mutation probability
+                                           will be used.
+        """
 
-        if control_mask is not None:
-            self.__important_groups, self.mandatory_length = \
-                self.extract_important_groups(initial_peptide, control_mask)
+        # If there are no important groups, the mask should be empty.
+        if control_mask is None:
+            control_mask = []
 
-        # Min i max length su zapravo ovisni o ovoj mandatory_length
+        # If allowed amino acids are not specified, the 20 standard ones are used.
+        if amino_acids is None:
+            amino_acids = 'ACDEFGHIKLMNPQRSTVWY'
 
-        self.__peptide = []
+        important_groups, mandatory_length = cls.extract_important_groups(initial_peptide, control_mask)
+
+        if initial_min_length < mandatory_length:
+            raise Exception("Initial minimum peptide length can not be smaller than mandatory length.")
+        elif initial_max_length < mandatory_length:
+            raise Exception("Initial maximum peptide length can not be smaller than mandatory length.")
+        elif initial_max_length < initial_min_length:
+            raise Exception("Initial maximum peptide length can not be smaller than initial minimum peptide length.")
+
+        return cls(
+            amino_acids=amino_acids,
+            important_groups=important_groups,
+            mandatory_length=mandatory_length,
+            initial_min_length=initial_min_length,
+            initial_max_length=initial_max_length,
+            mutation_probability=mutation_probability
+        )
+
+    @classmethod
+    def child(cls,
+              peptide,
+              important_groups,
+              mandatory_length,
+              amino_acids,
+              mutation_probability=None
+              ):
+        """The constructor that should be used when creating a child during recombination.
+
+        :param List[str] peptide: A list of peptide constituents, single letter amino acids and important groups.
+        :param dict{'str':int} important_groups: Dictionary containing extracted important groups and their quantity.
+        :param int mandatory_length: Summed lengths of all the important groups.
+        :param str amino_acids: Allowed amino acids.
+        :param float mutation_probability: Local mutation probability. If not specified, global mutation probability
+                                           will be used.
+        """
+
+        return cls(
+            amino_acids=amino_acids,
+            important_groups=important_groups,
+            mandatory_length=mandatory_length,
+            peptide=peptide,
+            mutation_probability=mutation_probability
+        )
 
     def randomize(self):
         """Create a random peptide.
@@ -52,11 +117,11 @@ class ModifiedPeptide(Subgenome):
         # Randomly choose peptide length from [`self.__initial_min_length`, `self.__initial_max_length`] range, while
         # taking into account the mandatory length of the important amino groups.
         num_amino_acids = np.random.randint(
-            low=self.__initial_min_length - self.mandatory_length,
-            high=self.__initial_max_length - self.mandatory_length + 1
+            low=self.__initial_min_length - self.__mandatory_length,
+            high=self.__initial_max_length - self.__mandatory_length + 1
         )
 
-        # randomly choose amino acids indices.
+        # Randomly choose amino acids indices.
         amino_acid_indices = np.random.randint(
             len(self.__amino_acids),
             size=num_amino_acids
@@ -144,18 +209,13 @@ class ModifiedPeptide(Subgenome):
             # Otherwise, `count` is equal to `self.__important_groups[group]` and no modifications of `child_peptide`
             # are required.
 
-############################################################
-        child = ModifiedPeptide(
-            initial_peptide=None,
-            control_mask=None,
-            initial_min_length=0,
-            initial_max_length=0,
-            amino_acids=None,
-            mutation_probability=0.0
+        child = self.child(
+            peptide=child_peptide,
+            important_groups=self.__important_groups,
+            mandatory_length=self.__mandatory_length,
+            amino_acids=self.__amino_acids,
+            mutation_probability=self._mutation_probability
         )
-
-        # Set child value.
-        child.set_peptide(child_peptide)
 
         return child
 
@@ -164,18 +224,31 @@ class ModifiedPeptide(Subgenome):
 
         There are 4 possible ways to perform a mutation:
         1. Add a random amino acid somewhere in a peptide.
-        2. Remove a random amino acid from peptide.
-        3. Swap two peptide constituents.
+        2. Swap two peptide constituents.
+        3. Remove a random amino acid from peptide.
         4. Change amino acid at a random place in a peptide.
 
         Each time, only a single type of mutation is performed. Each type of mutation has the same probability of
-        being chosen.
+        being chosen. Mutations 1 and 2 can be always be performed, while 3 and 4 can be performed only if a peptide
+        contains at least one amino acid along with important groups.
 
         Here, we do not need to ensure peptide length is in [`self.__initial_min_length`, `self.__initial_max_length`]
         range.
         """
 
+        # Choose a mutation type.
         random_mutation_choice = np.random.rand()
+
+        # First, list indices of peptide constituents which are amino acids and not important groups. This is done to
+        # check which types of mutation are applicable. If a peptide consists exclusively of important groups, the
+        # possible mutations include appending an amino acid to the sequence, and swapping two peptide constituents.
+        amino_indices = [index for index in range(len(self.__peptide)) if len(self.__peptide[index]) == 1]
+
+        if len(amino_indices) == 0:
+            # If only the first two types of mutation are applicable, adapt `random_mutation_choice`.
+            random_mutation_choice /= 2
+
+        print(random_mutation_choice)
 
         if 0 <= random_mutation_choice < 0.25:
             # Add a random amino acid somewhere in a peptide.
@@ -188,16 +261,6 @@ class ModifiedPeptide(Subgenome):
             )
 
         elif 0.25 <= random_mutation_choice < 0.5:
-            # Remove a random amino acid from peptide.
-
-            # First, list indices of peptide constituents which are not important groups (because we mustn't remove any
-            # of the important groups).
-            indices = [index for index in range(len(self.__peptide)) if len(self.__peptide[index]) == 1]
-            random_index = indices[np.random.randint(len(indices))]
-
-            del self.__peptide[random_index]
-
-        elif 0.5 <= random_mutation_choice < 0.75:
             # Swap two peptide constituents.
 
             index_1 = np.random.randint(len(self.__peptide))
@@ -205,15 +268,25 @@ class ModifiedPeptide(Subgenome):
 
             self.__peptide[index_1], self.__peptide[index_2] = self.__peptide[index_2], self.__peptide[index_1]
 
+        elif 0.5 <= random_mutation_choice < 0.75:
+            # Remove a random amino acid from peptide.
+
+            # First, list indices of peptide constituents which are not important groups (because we mustn't remove any
+            # of the important groups).
+            # indices = [index for index in range(len(self.__peptide)) if len(self.__peptide[index]) == 1]
+            random_index = amino_indices[np.random.randint(len(amino_indices))]
+
+            del self.__peptide[random_index]
+
         else:
-            # 0.75 <= random_mutation_choice <= 1:
+            # 0.75 <= random_mutation_choice < 1:
 
             # Change amino acid at a random place in a peptide.
 
             # First, list indices of peptide constituents which are not important groups (because we mustn't change any
             # of the important groups).
-            indices = [index for index in range(len(self.__peptide)) if len(self.__peptide[index]) == 1]
-            random_index = indices[np.random.randint(len(indices))]
+            # indices = [index for index in range(len(self.__peptide)) if len(self.__peptide[index]) == 1]
+            random_index = amino_indices[np.random.randint(len(amino_indices))]
 
             random_amino_acid = self.__amino_acids[
                 np.random.randint(len(self.__amino_acids))
@@ -221,7 +294,16 @@ class ModifiedPeptide(Subgenome):
 
             self.__peptide[random_index] = random_amino_acid
 
-    def extract_important_groups(self, initial_peptide, control_mask):
+    def get_peptide(self):
+        """Returns `self.__peptide` as a list of strings (amino acids and important groups)."""
+        return self.__peptide
+
+    def get_peptide_string(self):
+        """Returns `self.__peptide` as a single string, i.e., a peptide sequence."""
+        return ''.join(self.__peptide)
+
+    @classmethod
+    def extract_important_groups(cls, initial_peptide, control_mask):
         """Extract which important amino groups, and how many of them, should be present in a peptide.
 
         :param str initial_peptide: Initial amino acid sequence that should be modified.
