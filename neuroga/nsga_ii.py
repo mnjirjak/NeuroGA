@@ -114,7 +114,7 @@ class NSGAII:
     def __evaluate_solution(self, solution, data):
         """Evaluate solutions using all fitness functions.
 
-        :param genome solution: A solutions we want to evaluate.
+        :param Genome solution: A solutions we want to evaluate.
         :param Object data: The data that can be used during evaluation (optional).
         :return: List[float]: Fitness scores for all fitness functions.
         """

@@ -209,7 +209,7 @@ class ModifiedPeptide(Subgenome):
             # Otherwise, `count` is equal to `self.__important_groups[group]` and no modifications of `child_peptide`
             # are required.
 
-        child = self.child(
+        child = ModifiedPeptide.child(
             peptide=child_peptide,
             important_groups=self.__important_groups,
             mandatory_length=self.__mandatory_length,
@@ -247,8 +247,6 @@ class ModifiedPeptide(Subgenome):
         if len(amino_indices) == 0:
             # If only the first two types of mutation are applicable, adapt `random_mutation_choice`.
             random_mutation_choice /= 2
-
-        print(random_mutation_choice)
 
         if 0 <= random_mutation_choice < 0.25:
             # Add a random amino acid somewhere in a peptide.
@@ -293,14 +291,6 @@ class ModifiedPeptide(Subgenome):
             ]
 
             self.__peptide[random_index] = random_amino_acid
-
-    def get_peptide(self):
-        """Returns `self.__peptide` as a list of strings (amino acids and important groups)."""
-        return self.__peptide
-
-    def get_peptide_string(self):
-        """Returns `self.__peptide` as a single string, i.e., a peptide sequence."""
-        return ''.join(self.__peptide)
 
     @classmethod
     def extract_important_groups(cls, initial_peptide, control_mask):
@@ -367,3 +357,11 @@ class ModifiedPeptide(Subgenome):
             index += 1
 
         return important_groups, length
+
+    def get_peptide(self):
+        """Returns `self.__peptide` as a list of strings (amino acids and important groups)."""
+        return self.__peptide
+
+    def get_peptide_string(self):
+        """Returns `self.__peptide` as a single string, i.e., a peptide sequence."""
+        return ''.join(self.__peptide)
