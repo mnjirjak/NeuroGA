@@ -1,7 +1,6 @@
 import copy
 from neuroga.subgenome import Subgenome
 import numpy as np
-import random
 
 
 class OrderedNDList(Subgenome):
@@ -22,7 +21,7 @@ class OrderedNDList(Subgenome):
 
     def randomize(self):
         """Randomly shuffle the list."""
-        random.shuffle(self.items)
+        np.random.shuffle(self.items)
 
     def recombination(self, partner):
         """Combine this individual with `partner`.
