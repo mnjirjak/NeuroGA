@@ -141,7 +141,7 @@ class NSGAII:
         if self.__num_processes is not None:
             # Parallelize solution creation.
 
-            population = self.__dispatch_mp(self.__generate_random_solution, self.__population_size)
+            population = dispatch_mp(self.__generate_random_solution, self.__population_size, self.__num_processes)
 
         else:
             # Create solutions sequentially, without parallelization.
@@ -347,7 +347,7 @@ class NSGAII:
         if self.__num_processes is not None:
             # Parallelize children creation.
 
-            offspring = self.__dispatch_mp(self.__generate_single_solution, self.__offspring_size, population)
+            offspring = dispatch_mp(self.__generate_single_solution, self.__offspring_size, self.__num_processes, population)
 
         else:
             # Create children sequentially, without parallelization.
@@ -457,77 +457,77 @@ class NSGAII:
 
     # Multiprocessing
 
-    def __dispatch_mp(self, creator_function, array_size, arguments_mp=None):
-        """Generate `array_size` number of individuals using multiprocessing.
+def dispatch_mp(creator_function, array_size, num_processes, arguments_mp=None):
+    """Generate `array_size` number of individuals using multiprocessing.
 
-        :param Function creator_function: A function which will be used to create a single solution.
-        :param int array_size: Number of solutions to create.
-        :param Tuple arguments_mp: Arguments to be forwarded to the `creator_function`.
-        :return: List[Genome]
-        """
+    :param Function creator_function: A function which will be used to create a single solution.
+    :param int array_size: Number of solutions to create.
+    :param Tuple arguments_mp: Arguments to be forwarded to the `creator_function`.
+    :return: List[Genome]
+    """
 
-        array = []
-        processes = []
+    array = []
+    processes = []
 
-        # Shared queue for messages.
-        queue = Queue()
+    # Shared queue for messages.
+    queue = Queue()
 
-        # The maximum number of processes is dictated by `array_size`.
-        num_proc = min(self.__num_processes, array_size)
+    # The maximum number of processes is dictated by `array_size`.
+    num_proc = min(num_processes, array_size)
 
-        num_solutions = 0
+    num_solutions = 0
 
-        while True:
-            processes.append(
-                Process(
-                    target=self.__generate_mp,
-                    args=(queue, creator_function, arguments_mp)
-                )
+    while True:
+        processes.append(
+            Process(
+                target=generate_mp,
+                args=(queue, creator_function, arguments_mp)
             )
+        )
 
-            processes[-1].start()
-            num_solutions += 1
+        processes[-1].start()
+        num_solutions += 1
 
-            if len(processes) >= num_proc or num_solutions >= array_size:
-                # A maximum number of processes is currently executing, wait for them to finish.
+        if len(processes) >= num_proc or num_solutions >= array_size:
+            # A maximum number of processes is currently executing, wait for them to finish.
 
-                for process in processes:
-                    # Wait for the process to finish to successfully join it. If the process has not finished, it
-                    # may be because the message queue is full. To avoid potential deadlocks between a child and
-                    # a parent, empty the queue while waiting.
-                    while process.is_alive():
-                        while not queue.empty():
-                            # Add children from the message queue to the `array` list.
-                            array.append(queue.get())
+            for process in processes:
+                # Wait for the process to finish to successfully join it. If the process has not finished, it
+                # may be because the message queue is full. To avoid potential deadlocks between a child and
+                # a parent, empty the queue while waiting.
+                while process.is_alive():
+                    while not queue.empty():
+                        # Add children from the message queue to the `array` list.
+                        array.append(queue.get())
 
-                    process.join()
+                process.join()
 
-                processes.clear()
+            processes.clear()
 
-            # If `array_size` individuals were created, break the loop.
-            if num_solutions >= array_size:
-                break
+        # If `array_size` individuals were created, break the loop.
+        if num_solutions >= array_size:
+            break
 
-        # Add the remaining solutions to the `array`.
-        while not queue.empty():
-            array.append(queue.get())
+    # Add the remaining solutions to the `array`.
+    while not queue.empty():
+        array.append(queue.get())
 
-        return array
+    return array
 
-    def __generate_mp(self, queue, creator_function, arguments_mp):
-        """A multiprocessing way to generate and return a solution.
+def generate_mp(queue, creator_function, arguments_mp):
+    """A multiprocessing way to generate and return a solution.
 
-        :param multiprocessing.Queue queue
-        :param Function creator_function: A function which will be used to create a single solution.
-        :param Tuple arguments_mp: Arguments to be forwarded to the `creator_function`.
-        """
+    :param multiprocessing.Queue queue
+    :param Function creator_function: A function which will be used to create a single solution.
+    :param Tuple arguments_mp: Arguments to be forwarded to the `creator_function`.
+    """
 
-        # Each child process inherits an identical memory state, including random number generator. Therefore, to avoid
-        # creating identical solutions by all the processes, setting a new random seed is necessary.
-        np.random.seed(os.getpid() ** 2 % 10000)
+    # Each child process inherits an identical memory state, including random number generator. Therefore, to avoid
+    # creating identical solutions by all the processes, setting a new random seed is necessary.
+    np.random.seed(os.getpid() ** 2 % 10000)
 
-        # Generate a solution and put it in a shared memory queue so it is available to the parent process.
-        if arguments_mp is not None:
-            queue.put(creator_function(arguments_mp))
-        else:
-            queue.put(creator_function())
+    # Generate a solution and put it in a shared memory queue so it is available to the parent process.
+    if arguments_mp is not None:
+        queue.put(creator_function(arguments_mp))
+    else:
+        queue.put(creator_function())
