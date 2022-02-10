@@ -30,35 +30,35 @@ class NSGAII:
                  num_processes=None
                  ):
         # A genome that defines an individual. This is used as a template for constructing individual solutions.
-        self.__genome = genome
+        self.genome = genome
 
-        self.__fitness_functions = fitness_functions
-        self.__population_size = population_size
-        self.__offspring_size = offspring_size
-        self.__num_generations = num_generations
-        self.__num_solutions_tournament = num_solutions_tournament
-        self.__recombination_probability = recombination_probability
+        self.fitness_functions = fitness_functions
+        self.population_size = population_size
+        self.offspring_size = offspring_size
+        self.num_generations = num_generations
+        self.num_solutions_tournament = num_solutions_tournament
+        self.recombination_probability = recombination_probability
 
         # This mutation probability will be used for subgenomes that don't have a local mutation probability defined.
-        self.__mutation_probability_global = mutation_probability_global
+        self.mutation_probability_global = mutation_probability_global
 
         # The data used in fitness functions to evaluate individuals and direct the algorithm. This is optional.
-        self.__data_train = data_train
+        self.data_train = data_train
 
         # Whether validation is necessary. The algorithm is not aware of the results scored by individuals during
         # validation, therefore these results can help detect overfitting.
-        self.__validate = validate
+        self.validate = validate
 
         # The data used in fitness functions for validation purposes. This is optional.
-        self.__data_val = data_val
+        self.data_val = data_val
 
         # This function will be called at the end of each generation.
-        self.__on_generation_finish_callback = on_generation_finish_callback
+        self.on_generation_finish_callback = on_generation_finish_callback
 
         # Controls the maximum number of processes to be used when creating children.
-        self.__num_processes = num_processes
+        self.num_processes = num_processes
 
-        self.__genome.set_mutation_probabilities(self.__mutation_probability_global)
+        self.genome.set_mutation_probabilities(self.mutation_probability_global)
 
     def optimize(self):
         """Performs the optimization and returns pareto fronts of the last generation.
@@ -66,58 +66,58 @@ class NSGAII:
         :return: List[List[Genome]]
         """
         generation_number = 1
-        population = self.__generate_random_population()
+        population = self.generate_random_population()
 
         # If there is only a single evaluation function, a large speed-up can be made by
         # swapping non-dominated sort and crowding distance calculation with a simple 1D sort.
-        if len(self.__fitness_functions) > 1:
-            non_dominated_sorted_population = self.__perform_non_dominated_sort(population)
+        if len(self.fitness_functions) > 1:
+            non_dominated_sorted_population = self.perform_non_dominated_sort(population)
             for i, _ in enumerate(non_dominated_sorted_population):
-                self.__calculate_crowding_distance(non_dominated_sorted_population[i])
+                self.calculate_crowding_distance(non_dominated_sorted_population[i])
         else:
-            non_dominated_sorted_population = self.__perform_1d_sort(population)
+            non_dominated_sorted_population = self.perform_1d_sort(population)
 
         while True:
-            if generation_number > self.__num_generations:
+            if generation_number > self.num_generations:
                 return non_dominated_sorted_population
 
             # Generate offspring and add them to the population. This enforces elitism.
-            offspring = self.__generate_offspring(population)
+            offspring = self.generate_offspring(population)
             population += offspring
 
             # If we have a single evaluation function, perform 1D sort.
-            if len(self.__fitness_functions) > 1:
-                non_dominated_sorted_population = self.__perform_non_dominated_sort(population)
+            if len(self.fitness_functions) > 1:
+                non_dominated_sorted_population = self.perform_non_dominated_sort(population)
                 for i, _ in enumerate(non_dominated_sorted_population):
-                    self.__calculate_crowding_distance(non_dominated_sorted_population[i])
+                    self.calculate_crowding_distance(non_dominated_sorted_population[i])
             else:
-                non_dominated_sorted_population = self.__perform_1d_sort(population)
+                non_dominated_sorted_population = self.perform_1d_sort(population)
 
             # Choose the best individuals for the next generation.
-            non_dominated_sorted_population = self.__choose_next_generation(non_dominated_sorted_population)
+            non_dominated_sorted_population = self.choose_next_generation(non_dominated_sorted_population)
 
             # If we have a single evaluation function, avoid crowding distance calculation.
-            if len(self.__fitness_functions) > 1:
+            if len(self.fitness_functions) > 1:
                 # When choosing individuals for the next generation, there is a chance some solutions from the last pareto
                 # front will be removed, which affects crowding distance metric. Therefore, we calculate the correct
                 # crowding distances for the last pareto front.
-                self.__calculate_crowding_distance(non_dominated_sorted_population[-1])
+                self.calculate_crowding_distance(non_dominated_sorted_population[-1])
 
             # Put the individuals from all pareto fronts in the same list.
             population = [solution for pareto_front in non_dominated_sorted_population for solution in pareto_front]
 
-            if self.__on_generation_finish_callback is not None:
+            if self.on_generation_finish_callback is not None:
                 # The callback forwards current generation number, maximum number of generations and the current
                 # population divided into pareto fronts.
-                self.__on_generation_finish_callback(
+                self.on_generation_finish_callback(
                     generation_number,
-                    self.__num_generations,
+                    self.num_generations,
                     non_dominated_sorted_population
                 )
 
             generation_number += 1
 
-    def __evaluate_solution(self, solution, data):
+    def evaluate_solution(self, solution, data):
         """Evaluate solutions using all fitness functions.
 
         :param genome solution: A solutions we want to evaluate.
@@ -125,12 +125,12 @@ class NSGAII:
         :return: List[float]: Fitness scores for all fitness functions.
         """
         ff_values = []
-        for fitness_function in self.__fitness_functions:
+        for fitness_function in self.fitness_functions:
             ff_values.append(fitness_function.function(solution, data))
         return ff_values
 
-    def __generate_random_population(self):
-        """Generate `self.__population_size` random individuals.
+    def generate_random_population(self):
+        """Generate `self.population_size` random individuals.
 
         :param List[Genome] population
         :return: List[Genome]
@@ -138,39 +138,39 @@ class NSGAII:
 
         population = []
 
-        if self.__num_processes is not None:
+        if self.num_processes is not None:
             # Parallelize solution creation.
 
-            population = dispatch_mp(self.__generate_random_solution, self.__population_size, self.__num_processes)
+            population = dispatch_mp(self.generate_random_solution, self.population_size, self.num_processes)
 
         else:
             # Create solutions sequentially, without parallelization.
 
-            for _ in range(self.__population_size):
-                population.append(self.__generate_random_solution())
+            for _ in range(self.population_size):
+                population.append(self.generate_random_solution())
 
         return population
 
-    def __generate_random_solution(self):
+    def generate_random_solution(self):
         """Generate one random solution.
 
         :return: Genome
         """
 
         # Create solution by copying template.
-        solution = copy.deepcopy(self.__genome)
+        solution = copy.deepcopy(self.genome)
 
         # Randomize it.
         solution.randomize()
 
         # Evaluate it.
-        solution.fitness_values_train = self.__evaluate_solution(solution, self.__data_train)
-        if self.__validate:
-            solution.fitness_values_val = self.__evaluate_solution(solution, self.__data_val)
+        solution.fitness_values_train = self.evaluate_solution(solution, self.data_train)
+        if self.validate:
+            solution.fitness_values_val = self.evaluate_solution(solution, self.data_val)
 
         return solution
 
-    def __perform_non_dominated_sort(self, population):
+    def perform_non_dominated_sort(self, population):
         """Performs non-dominated sorting of the population.
 
         Refer to the paper for more details.
@@ -197,12 +197,12 @@ class NSGAII:
                 # indicates superiority of population [j].
                 fitness_diff = []
 
-                for k, _ in enumerate(self.__fitness_functions):
-                    if self.__fitness_functions[k].function_type == FitnessFunctionType.MIN:
+                for k, _ in enumerate(self.fitness_functions):
+                    if self.fitness_functions[k].function_type == FitnessFunctionType.MIN:
                         # We want to minimize this FF, therefore the subtraction should return a positive number when
                         # population[i] has a lower FF value.
                         fitness_diff.append(population[j].fitness_values_train[k] - population[i].fitness_values_train[k])
-                    elif self.__fitness_functions[k].function_type == FitnessFunctionType.MAX:
+                    elif self.fitness_functions[k].function_type == FitnessFunctionType.MAX:
                         # We want to maximize this FF, therefore the subtraction should return a positive number when
                         # population[i] has a higher FF value.
                         fitness_diff.append(population[i].fitness_values_train[k] - population[j].fitness_values_train[k])
@@ -273,14 +273,14 @@ class NSGAII:
 
         return object_pareto_fronts
 
-    def __calculate_crowding_distance(self, pareto_front):
+    def calculate_crowding_distance(self, pareto_front):
         """Calculate and assign crowding distance to each solution on the current pareto front.
 
         :param List[Genome] pareto_front
         """
 
         # Iterate over all fitness functions.
-        for k, _ in enumerate(self.__fitness_functions):
+        for k, _ in enumerate(self.fitness_functions):
             # Sort in ascending order according to current FF.
             sorted_pareto_front = sorted(
                 pareto_front,
@@ -305,7 +305,7 @@ class NSGAII:
                     (sorted_pareto_front[i + 1].fitness_values_train[k] - sorted_pareto_front[i - 1].fitness_values_train[k]) / ff_range
                 )
 
-    def __perform_1d_sort(self, population):
+    def perform_1d_sort(self, population):
         """Performs a simple 1D sort.
 
         Sorts the `population` according to the one fitness function, taking into account the type of
@@ -317,9 +317,9 @@ class NSGAII:
         """
 
         # Determine sort type with regards to the problem.
-        if self.__fitness_functions[0].function_type == FitnessFunctionType.MIN:
+        if self.fitness_functions[0].function_type == FitnessFunctionType.MIN:
             reverse_sort = False
-        elif self.__fitness_functions[0].function_type == FitnessFunctionType.MAX:
+        elif self.fitness_functions[0].function_type == FitnessFunctionType.MAX:
             reverse_sort = True
 
         # Sort the population.
@@ -335,8 +335,8 @@ class NSGAII:
 
         return object_pareto_fronts
 
-    def __generate_offspring(self, population):
-        """Generate `self.__offspring_size` number of individuals.
+    def generate_offspring(self, population):
+        """Generate `self.offspring_size` number of individuals.
 
         :param List[Genome] population
         :return: List[Genome]
@@ -344,33 +344,33 @@ class NSGAII:
 
         offspring = []
 
-        if self.__num_processes is not None:
+        if self.num_processes is not None:
             # Parallelize children creation.
 
-            offspring = dispatch_mp(self.__generate_single_solution, self.__offspring_size, self.__num_processes, population)
+            offspring = dispatch_mp(self.generate_single_solution, self.offspring_size, self.num_processes, population)
 
         else:
             # Create children sequentially, without parallelization.
 
-            for _ in range(self.__offspring_size):
-                offspring.append(self.__generate_single_solution(population))
+            for _ in range(self.offspring_size):
+                offspring.append(self.generate_single_solution(population))
 
         return offspring
 
-    def __generate_single_solution(self, population):
+    def generate_single_solution(self, population):
         """Create and return one child.
 
         :param List[Genome] population
         :return: Genome
         """
         # Pick the first parent.
-        parent_1 = self.__tournament_select_parent(population)
+        parent_1 = self.tournament_select_parent(population)
 
         # Decide if we should just clone the first parent or perform recombination.
-        if np.random.rand() <= self.__recombination_probability:
+        if np.random.rand() <= self.recombination_probability:
             # Pick the second parent and create a child.
             while True:
-                parent_2 = self.__tournament_select_parent(population)
+                parent_2 = self.tournament_select_parent(population)
                 if parent_1 is not parent_2:
                     break
 
@@ -383,14 +383,14 @@ class NSGAII:
         child.mutate()
 
         # Evaluate the child.
-        child.fitness_values_train = self.__evaluate_solution(child, self.__data_train)
-        if self.__validate:
-            child.fitness_values_val = self.__evaluate_solution(child, self.__data_val)
+        child.fitness_values_train = self.evaluate_solution(child, self.data_train)
+        if self.validate:
+            child.fitness_values_val = self.evaluate_solution(child, self.data_val)
 
         return child
 
-    def __tournament_select_parent(self, population):
-        """Perform tournament selection between `self.__num_solutions_tournament` and pick the best one.
+    def tournament_select_parent(self, population):
+        """Perform tournament selection between `self.num_solutions_tournament` and pick the best one.
 
         Lower `rank` and higher `crowding distance` are desirable.
 
@@ -398,7 +398,7 @@ class NSGAII:
         :return: Genome: The winner of the tournament.
         """
         # How many matches will be held.
-        num_battles = self.__num_solutions_tournament - 1
+        num_battles = self.num_solutions_tournament - 1
 
         random_parent_index = np.random.randint(0, len(population))
 
@@ -426,7 +426,7 @@ class NSGAII:
             if num_battles <= 0:
                 return population[random_parent_index]
 
-    def __choose_next_generation(self, non_dominated_sorted_population):
+    def choose_next_generation(self, non_dominated_sorted_population):
         """Pick individuals for the next generation.
 
         :param List[List[Genome]] non_dominated_sorted_population
@@ -437,19 +437,19 @@ class NSGAII:
 
         # We start from the best pareto front and work our way towards the worst.
         for pareto_front in non_dominated_sorted_population:
-            if len(pareto_front) + size <= self.__population_size:
+            if len(pareto_front) + size <= self.population_size:
                 # If the whole pareto front fits into next generation, add it.
                 next_generation.append(pareto_front)
                 size += len(pareto_front)
             else:
                 # The next generation is full, there are no more positions available.
-                if self.__population_size - size <= 0:
+                if self.population_size - size <= 0:
                     break
 
                 # If not the whole pareto front fits, add the individuals with the highest crowding distance to
                 # preserve genetic diversity.
                 pareto_front.sort(key=lambda solution: solution.crowding_distance)
-                next_generation.append(pareto_front[-(self.__population_size - size):])
+                next_generation.append(pareto_front[-(self.population_size - size):])
                 break
 
         return next_generation
