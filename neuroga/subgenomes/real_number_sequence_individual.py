@@ -1,5 +1,5 @@
-from neuroga.subgenome import Subgenome
-from neuroga.subgenomes.real_number import RealNumber
+from NeuroGA.neuroga.subgenome import Subgenome
+from NeuroGA.neuroga.subgenomes.real_number import RealNumber
 
 
 class RealNumberSequenceIndividual(Subgenome):

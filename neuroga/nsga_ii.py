@@ -3,7 +3,7 @@ import numpy as np
 import copy
 import os
 from multiprocessing import Process, Queue
-from neuroga.fitness_function import FitnessFunctionType
+from NeuroGA.neuroga.fitness_function import FitnessFunctionType
 
 
 class NSGAII:

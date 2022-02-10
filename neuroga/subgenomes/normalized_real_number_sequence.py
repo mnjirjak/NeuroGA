@@ -1,4 +1,4 @@
-from neuroga.subgenomes.real_number_sequence import RealNumberSequence
+from NeuroGA.neuroga.subgenomes.real_number_sequence import RealNumberSequence
 import numpy as np
 
 

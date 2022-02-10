@@ -1,4 +1,4 @@
-from neuroga.subgenome import Subgenome
+from NeuroGA.neuroga.subgenome import Subgenome
 import numpy as np
 
 
