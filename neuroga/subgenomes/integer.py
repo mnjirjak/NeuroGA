@@ -2,14 +2,14 @@ from neuroga.subgenome import Subgenome
 import numpy as np
 
 
-class RealNumber(Subgenome):
+class Integer(Subgenome):
     """A real number bound by min and max values."""
 
     def __init__(self,
-                 min_value=-1.0,
-                 max_value=1.0,
-                 min_mutation_value=-0.05,
-                 max_mutation_value=0.05,
+                 min_value=0,
+                 max_value=10,
+                 min_mutation_value=1,
+                 max_mutation_value=1,
                  mutation_probability=None):
         """
         :param float min_value: Minimum value of the number.
@@ -27,11 +27,11 @@ class RealNumber(Subgenome):
         self.__min_mutation_value = min_mutation_value
         self.__max_mutation_value = max_mutation_value
 
-        self.real_number = 0.0
+        self.number = 0
 
     def randomize(self):
         """Randomly assign value in [self.__min_value, self.__max_value) range."""
-        self.real_number = np.random.rand() * (self.__max_value - self.__min_value) + self.__min_value
+        self.number = np.random.randint(self.__min_value, self.__max_value + 1)
 
     def recombination(self, partner):
         """Combine this individual with `partner` using arithmetic mean.
@@ -44,7 +44,7 @@ class RealNumber(Subgenome):
         """
 
         # Create a new child object.
-        child = RealNumber(
+        child = Integer(
             min_value=self.__min_value,
             max_value=self.__max_value,
             min_mutation_value=self.__min_mutation_value,
@@ -52,11 +52,8 @@ class RealNumber(Subgenome):
             mutation_probability=self._mutation_probability
         )
 
-        # Set child value.
-        #child.real_number = (self.real_number + partner.real_number) / 2
-        #child.real_number = self.real_number if np.random.rand() < 0.5 else partner.real_number
-        # r = np.random.rand()
-        # child.real_number = r * self.real_number + (1 - r) * partner.real_number
+        r = np.random.rand()
+        child.number = int(np.round(r * self.number + (1 - r) * partner.number))
 
         return child
 
@@ -72,5 +69,5 @@ class RealNumber(Subgenome):
         #
         # self.real_number = min(max(self.real_number + mutation_value, self.__min_value), self.__max_value)
 
-        if np.random.rand() <= self.get_mutation_probability():
-            self.real_number = np.random.uniform() * (self.__max_value - self.__min_value) + self.__min_value
+        if np.random.rand() < self._mutation_probability:
+            self.randomize()

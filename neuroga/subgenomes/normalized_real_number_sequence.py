@@ -54,8 +54,8 @@ class NormalizedRealNumberSequence(RealNumberSequence):
         Mutation details are left to the superclass, RealNumberSequence.
         """
 
-        child = super().mutate()
-        child.values = self.__normalize_values(child.values)
+        super().mutate()
+        self.values = self.__normalize_values(self.values)
 
     def __normalize_values(self, values):
         """Normalizes `values` to [0, 1] range.

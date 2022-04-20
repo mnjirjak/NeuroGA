@@ -68,6 +68,8 @@ class NSGAII:
         generation_number = 1
         population = self.__generate_random_population()
 
+        self.first_pop = copy.deepcopy(population)
+
         # If there is only a single evaluation function, a large speed-up can be made by
         # swapping non-dominated sort and crowding distance calculation with a simple 1D sort.
         if len(self.__fitness_functions) > 1:
@@ -79,11 +81,18 @@ class NSGAII:
 
         while True:
             if generation_number > self.__num_generations:
-                return non_dominated_sorted_population
+                return non_dominated_sorted_population, self.first_pop
+
+            np.random.shuffle(population)
 
             # Generate offspring and add them to the population. This enforces elitism.
             offspring = self.__generate_offspring(population)
             population += offspring
+            #population = offspring
+
+
+            # for _ in range(5):
+            #     population.append(self.__generate_random_solution())
 
             # If we have a single evaluation function, perform 1D sort.
             if len(self.__fitness_functions) > 1:
@@ -330,6 +339,7 @@ class NSGAII:
 
         for index, solution in enumerate(sorted_population):
             # Lower rank indicates higher quality.
+            #solution.rank = solution.fitness_values_train[0] #index
             solution.rank = index
             object_pareto_fronts.append([solution])
 
@@ -363,6 +373,29 @@ class NSGAII:
         :param List[Genome] population
         :return: Genome
         """
+
+        # ffs = np.array([solution.fitness_values_train[0] for solution in population])
+        # ffs *= 2
+        # ffs /= np.sum(ffs)
+        # ffs = np.cumsum(ffs)
+        #
+        # r = np.random.rand()
+        #
+        # i1 = 0
+        # while r > ffs[i1]:
+        #     i1 += 1
+        #
+        # r = np.random.rand()
+        #
+        # i2 = 0
+        # while r > ffs[i2]:
+        #     i2 += 1
+        #
+        # parent_1 = population[i1]
+        # parent_2 = population[i2]
+        #
+        # child = parent_1.recombination(parent_2)
+
         # Pick the first parent.
         parent_1 = self.__tournament_select_parent(population)
 
@@ -378,6 +411,27 @@ class NSGAII:
         else:
             # Create a clone.
             child = copy.deepcopy(parent_1)
+
+        # # Exploration
+        # child.fitness_values_train = self.__evaluate_solution(child, self.__data_train)
+        # children = [child]
+        #
+        # c = child
+        #
+        # for i in range(5):
+        #     c = copy.deepcopy(c)
+        #     for subgenome in c.get_subgenomes():
+        #         c.get_subgenomes()[subgenome].mutate()
+        #     c.fitness_values_train = self.__evaluate_solution(c, self.__data_train)
+        #
+        #     children.append(c)
+        #
+        # ffs = [solution.fitness_values_train[0] for solution in children]
+        # #print(ffs, ffs.index(min(ffs)))
+        #
+        # child = children[ffs.index(min(ffs))]
+
+
 
         # Mutate a child, introduce slight variation.
         child.mutate()

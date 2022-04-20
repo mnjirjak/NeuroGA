@@ -38,9 +38,10 @@ class Genome:
     def mutate(self):
         """Mutate all the subgenomes."""
         for _, subgenome in self.__subgenomes.items():
+            #print(subgenome.get_mutation_probability())
             # Choose whether to mutate the subgenome with respect to its mutation probability.
-            if np.random.rand() <= subgenome.get_mutation_probability():
-                subgenome.mutate()
+            #if np.random.rand() <= subgenome.get_mutation_probability():
+            subgenome.mutate()
 
     def set_mutation_probabilities(self, mutation_probability_global):
         """Set mutation probabilities for subgenomes.
