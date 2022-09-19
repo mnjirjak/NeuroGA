@@ -222,15 +222,17 @@ class ModifiedPeptide(Subgenome):
     def mutate(self):
         """Perform mutation, introduce a slight variation.
 
-        There are 4 possible ways to perform a mutation:
+        There are 5 possible ways to perform a mutation:
         1. Add a random amino acid somewhere in a peptide.
         2. Swap two peptide constituents.
         3. Remove a random amino acid from peptide.
-        4. Change amino acid at a random place in a peptide.
+        4. Change random amino acid to another one.
+        5. Change random amino acid to alanine (alanine scan).
 
         Each time, only a single type of mutation is performed. Each type of mutation has the same probability of
-        being chosen. Mutations 1 and 2 can be always be performed, while 3 and 4 can be performed only if a peptide
-        contains at least one amino acid along with important groups.
+        being chosen. Mutations 1 and 2 can always be performed, while 3, 4 and 5 can be performed only if a peptide
+        contains at least one amino acid along with important groups. Additionally, mutation 5 can be performed only
+        if `self.__amino_acids` contains alanine.
 
         Here, we do not need to ensure peptide length is in [`self.__initial_min_length`, `self.__initial_max_length`]
         range.
@@ -244,11 +246,15 @@ class ModifiedPeptide(Subgenome):
         # possible mutations include appending an amino acid to the sequence, and swapping two peptide constituents.
         amino_indices = [index for index in range(len(self.__peptide)) if len(self.__peptide[index]) == 1]
 
+        # Adapt `random_mutation_choice` according to the mutations allowed.
         if len(amino_indices) == 0:
-            # If only the first two types of mutation are applicable, adapt `random_mutation_choice`.
-            random_mutation_choice /= 2
+            # Random range [0.0, 1.0> --> [0.0, 0.4>.
+            random_mutation_choice /= 2.5
+        elif 'A' not in self.__amino_acids:
+            # Random range [0.0, 1.0> --> [0.0, 0.8>.
+            random_mutation_choice /= 1.25
 
-        if 0 <= random_mutation_choice < 0.25:
+        if 0 <= random_mutation_choice < 0.2:
             # Add a random amino acid somewhere in a peptide.
 
             self.__peptide.insert(
@@ -258,7 +264,7 @@ class ModifiedPeptide(Subgenome):
                 self.__amino_acids[np.random.randint(len(self.__amino_acids))]
             )
 
-        elif 0.25 <= random_mutation_choice < 0.5:
+        elif 0.2 <= random_mutation_choice < 0.4:
             # Swap two peptide constituents.
 
             index_1 = np.random.randint(len(self.__peptide))
@@ -266,24 +272,15 @@ class ModifiedPeptide(Subgenome):
 
             self.__peptide[index_1], self.__peptide[index_2] = self.__peptide[index_2], self.__peptide[index_1]
 
-        elif 0.5 <= random_mutation_choice < 0.75:
+        elif 0.4 <= random_mutation_choice < 0.6:
             # Remove a random amino acid from peptide.
 
-            # First, list indices of peptide constituents which are not important groups (because we mustn't remove any
-            # of the important groups).
-            # indices = [index for index in range(len(self.__peptide)) if len(self.__peptide[index]) == 1]
             random_index = amino_indices[np.random.randint(len(amino_indices))]
 
             del self.__peptide[random_index]
+        elif 0.6 <= random_mutation_choice < 0.8:
+            # Change random amino acid to another one.
 
-        else:
-            # 0.75 <= random_mutation_choice < 1:
-
-            # Change amino acid at a random place in a peptide.
-
-            # First, list indices of peptide constituents which are not important groups (because we mustn't change any
-            # of the important groups).
-            # indices = [index for index in range(len(self.__peptide)) if len(self.__peptide[index]) == 1]
             random_index = amino_indices[np.random.randint(len(amino_indices))]
 
             random_amino_acid = self.__amino_acids[
@@ -291,6 +288,12 @@ class ModifiedPeptide(Subgenome):
             ]
 
             self.__peptide[random_index] = random_amino_acid
+        else:
+            # 0.8 <= random_mutation_choice < 1.0:
+            # Change random amino acid to alanine (alanine scan).
+
+            random_index = amino_indices[np.random.randint(len(amino_indices))]
+            self.__peptide[random_index] = 'A'
 
     @classmethod
     def extract_important_groups(cls, initial_peptide, control_mask):
@@ -312,7 +315,7 @@ class ModifiedPeptide(Subgenome):
         # Loop though the members of the `control_mask`.
         for marker in control_mask:
 
-            # If a member is and instance of a `List`, all the member of that list constitute a single important group,
+            # If a member is an instance of a `List`, all the members of that list constitute a single important group,
             # regardless of the values of the members.
             if isinstance(marker, list):
                 group = []
@@ -359,9 +362,15 @@ class ModifiedPeptide(Subgenome):
         return important_groups, length
 
     def get_peptide(self):
-        """Returns `self.__peptide` as a list of strings (amino acids and important groups)."""
+        """Returns `self.__peptide` as a list of strings (amino acids and important groups).
+
+        The '*' next to each amino acid which is also an important group is kept.
+        """
         return self.__peptide
 
     def get_peptide_string(self):
-        """Returns `self.__peptide` as a single string, i.e., a peptide sequence."""
-        return ''.join(self.__peptide)
+        """Returns `self.__peptide` as a single string, i.e., a peptide sequence.
+
+        The '*' next to each amino acid which is also an important group is removed.
+        """
+        return (''.join(self.__peptide)).replace("*", "")
